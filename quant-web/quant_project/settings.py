@@ -67,7 +67,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'quant_project.wsgi.application'
 
-db_engine = os.getenv('DB_ENGINE', 'postgresql')
+db_engine = os.getenv('DB_ENGINE', 'sqlite3')
 if db_engine == 'sqlite3':
     DATABASES = {
         'default': {
