@@ -1,0 +1,702 @@
+{% extends "base.html" %}
+{% block title %}Trading Terminal — {{ account.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>{{ account.name }} — Paper Trading</h4>
+        <small class="text-muted">Simulation account • Created {{ account.created_at|date:"M d, Y" }}</small>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'portfolio:trade_history' pk=account.pk %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-clock-history me-1"></i>Trade History
+        </a>
+        <a href="{% url 'portfolio:trading_accounts' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>All Accounts
+        </a>
+    </div>
+</div>
+
+<!-- Account Summary Cards -->
+<div class="row g-3 mb-3">
+    <div class="col-md-2">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-2">
+                <small class="text-muted text-uppercase">Total Equity</small>
+                <h5 class="mb-0 mt-1" id="summary-equity">${{ summary.total_equity|floatformat:2 }}</h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-2">
+                <small class="text-muted text-uppercase">Cash</small>
+                <h5 class="mb-0 mt-1" id="summary-cash">${{ summary.cash_balance|floatformat:2 }}</h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-2">
+                <small class="text-muted text-uppercase">Market Value</small>
+                <h5 class="mb-0 mt-1" id="summary-mv">${{ summary.total_market_value|floatformat:2 }}</h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-2">
+                <small class="text-muted text-uppercase">Unrealized P&L</small>
+                <h5 class="mb-0 mt-1 {% if summary.total_unrealized_pnl >= 0 %}text-success{% else %}text-danger{% endif %}" id="summary-upnl">
+                    ${{ summary.total_unrealized_pnl|floatformat:2 }}
+                </h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-2">
+                <small class="text-muted text-uppercase">Realized P&L</small>
+                <h5 class="mb-0 mt-1 {% if summary.total_realized_pnl >= 0 %}text-success{% else %}text-danger{% endif %}" id="summary-rpnl">
+                    ${{ summary.total_realized_pnl|floatformat:2 }}
+                </h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-2">
+                <small class="text-muted text-uppercase">Total Return</small>
+                <h5 class="mb-0 mt-1 {% if summary.total_return >= 0 %}text-success{% else %}text-danger{% endif %}" id="summary-return">
+                    {{ summary.total_return }}%
+                </h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- Chart + Order Entry -->
+    <div class="col-lg-9">
+        <!-- Chart Controls -->
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body py-2">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <div class="input-group input-group-sm" style="max-width: 200px;">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" id="chart-ticker-input" value="{{ default_ticker }}" placeholder="Ticker...">
+                        <button class="btn btn-primary" id="chart-load-btn" type="button">Go</button>
+                    </div>
+                    <div class="btn-group btn-group-sm" id="period-btns">
+                        <button class="btn btn-outline-secondary" data-period="1d" data-interval="1m">1D</button>
+                        <button class="btn btn-outline-secondary" data-period="5d" data-interval="5m">5D</button>
+                        <button class="btn btn-outline-secondary active" data-period="1mo" data-interval="15m">1M</button>
+                        <button class="btn btn-outline-secondary" data-period="3mo" data-interval="1d">3M</button>
+                        <button class="btn btn-outline-secondary" data-period="6mo" data-interval="1d">6M</button>
+                        <button class="btn btn-outline-secondary" data-period="1y" data-interval="1d">1Y</button>
+                    </div>
+                    <div class="ms-auto d-flex align-items-center gap-2">
+                        <span class="badge bg-dark fs-6" id="chart-price-badge">--</span>
+                        <span class="badge" id="chart-change-badge">--</span>
+                        <div class="form-check form-switch ms-2">
+                            <input class="form-check-input" type="checkbox" id="auto-refresh-toggle" checked>
+                            <label class="form-check-label small" for="auto-refresh-toggle">Auto-refresh</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Candlestick Chart -->
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body p-0">
+                <div id="candlestick-chart" style="height: 420px;"></div>
+            </div>
+        </div>
+
+        <!-- Volume Chart -->
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body p-0">
+                <div id="volume-chart" style="height: 120px;"></div>
+            </div>
+        </div>
+
+        <!-- Positions Table -->
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bi bi-collection me-2"></i>Open Positions ({{ summary.position_count }})</h6>
+                <span class="spinner-border spinner-border-sm text-muted d-none" id="positions-spinner"></span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle" id="positions-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Type</th>
+                                <th>Side</th>
+                                <th class="text-end">Qty</th>
+                                <th class="text-end">Entry</th>
+                                <th class="text-end">Current</th>
+                                <th class="text-end">Mkt Value</th>
+                                <th class="text-end">P&L</th>
+                                <th class="text-end">P&L %</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in summary.positions %}
+                            <tr>
+                                <td>
+                                    <a href="#" class="ticker-link fw-bold text-decoration-none" data-ticker="{{ p.position.ticker }}">
+                                        {{ p.position.ticker }}
+                                    </a>
+                                </td>
+                                <td><span class="badge bg-secondary">{{ p.position.get_asset_type_display }}</span></td>
+                                <td>
+                                    <span class="badge {% if p.position.side == 'long' %}bg-success{% else %}bg-danger{% endif %}">
+                                        {{ p.position.side|upper }}
+                                    </span>
+                                </td>
+                                <td class="text-end">{{ p.position.quantity }}</td>
+                                <td class="text-end">${{ p.position.entry_price|floatformat:2 }}</td>
+                                <td class="text-end">${{ p.current_price|floatformat:2 }}</td>
+                                <td class="text-end">${{ p.market_value|floatformat:2 }}</td>
+                                <td class="text-end {% if p.pnl_positive %}text-success{% else %}text-danger{% endif %}">
+                                    ${{ p.unrealized_pnl|floatformat:2 }}
+                                </td>
+                                <td class="text-end {% if p.pnl_positive %}text-success{% else %}text-danger{% endif %}">
+                                    {{ p.pnl_pct }}%
+                                </td>
+                                <td>
+                                    <form method="post" action="{% url 'portfolio:close_position' pk=account.pk position_pk=p.position.pk %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button class="btn btn-outline-danger btn-sm" title="Close position">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="10" class="text-center text-muted py-4">No open positions. Place an order to get started.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Orders -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-list-check me-2"></i>Recent Orders</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Time</th>
+                                <th>Symbol</th>
+                                <th>Type</th>
+                                <th>Side</th>
+                                <th class="text-end">Qty</th>
+                                <th class="text-end">Price</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in recent_orders %}
+                            <tr>
+                                <td class="small">{{ order.created_at|date:"M d H:i" }}</td>
+                                <td class="fw-bold">{{ order.ticker }}</td>
+                                <td>{{ order.get_order_type_display }}</td>
+                                <td>
+                                    <span class="badge {% if order.side == 'buy' %}bg-success{% else %}bg-danger{% endif %}">
+                                        {{ order.side|upper }}
+                                    </span>
+                                </td>
+                                <td class="text-end">{{ order.quantity }}</td>
+                                <td class="text-end">
+                                    {% if order.filled_price %}
+                                        ${{ order.filled_price|floatformat:2 }}
+                                    {% elif order.limit_price %}
+                                        ${{ order.limit_price|floatformat:2 }} (limit)
+                                    {% elif order.stop_price %}
+                                        ${{ order.stop_price|floatformat:2 }} (stop)
+                                    {% else %}
+                                        --
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge {% if order.status == 'filled' %}bg-success{% elif order.status == 'pending' %}bg-warning text-dark{% elif order.status == 'cancelled' %}bg-secondary{% else %}bg-info{% endif %}">
+                                        {{ order.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if order.status == 'pending' %}
+                                    <form method="post" action="{% url 'portfolio:cancel_order' pk=account.pk order_pk=order.pk %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button class="btn btn-outline-warning btn-sm" title="Cancel order">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-3">No orders yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Entry Panel (Right Sidebar) -->
+    <div class="col-lg-3">
+        <!-- Quick Quote -->
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body text-center py-3" id="quick-quote-panel">
+                <h4 class="mb-0 fw-bold" id="qq-ticker">{{ default_ticker }}</h4>
+                <h3 class="mb-1" id="qq-price">--</h3>
+                <span class="badge fs-6" id="qq-change">--</span>
+                <div class="row mt-2 small text-muted">
+                    <div class="col-6">
+                        <div>Open: <span id="qq-open">--</span></div>
+                        <div>High: <span id="qq-high">--</span></div>
+                    </div>
+                    <div class="col-6">
+                        <div>Low: <span id="qq-low">--</span></div>
+                        <div>Vol: <span id="qq-vol">--</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Entry Form -->
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-dark text-white">
+                <h6 class="mb-0"><i class="bi bi-send me-2"></i>Place Order</h6>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'portfolio:place_order' pk=account.pk %}" id="order-form">
+                    {% csrf_token %}
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold">Symbol</label>
+                        {{ order_form.ticker }}
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Asset Type</label>
+                            {{ order_form.asset_type }}
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Side</label>
+                            {{ order_form.side }}
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Order Type</label>
+                            {{ order_form.order_type }}
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Quantity</label>
+                            {{ order_form.quantity }}
+                        </div>
+                    </div>
+                    <div class="mb-2" id="limit-price-group" style="display:none;">
+                        <label class="form-label small fw-bold">Limit Price</label>
+                        {{ order_form.limit_price }}
+                    </div>
+                    <div class="mb-2" id="stop-price-group" style="display:none;">
+                        <label class="form-label small fw-bold">Stop Price</label>
+                        {{ order_form.stop_price }}
+                    </div>
+
+                    <!-- Options Fields -->
+                    <div id="options-fields" style="display:none;">
+                        <hr class="my-2">
+                        <small class="text-muted fw-bold">Options Details</small>
+                        <div class="row mb-2 mt-1">
+                            <div class="col-6">
+                                <label class="form-label small">Call/Put</label>
+                                {{ order_form.option_type }}
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small">Strike</label>
+                                {{ order_form.strike_price }}
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small">Expiry</label>
+                            {{ order_form.expiry_date }}
+                        </div>
+                    </div>
+
+                    <!-- Estimated Cost -->
+                    <div class="bg-light rounded p-2 mb-2 small">
+                        <div class="d-flex justify-content-between">
+                            <span>Est. Cost:</span>
+                            <span class="fw-bold" id="est-cost">--</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Available:</span>
+                            <span>${{ account.cash_balance|floatformat:2 }}</span>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-1">
+                        <button type="submit" class="btn btn-success btn-sm" id="buy-btn">
+                            <i class="bi bi-arrow-up-circle me-1"></i>Submit Order
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Market Indices Ticker -->
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-white">
+                <h6 class="mb-0 small"><i class="bi bi-globe me-1"></i>Markets</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush small" id="market-indices">
+                    <div class="text-center py-3 text-muted">
+                        <div class="spinner-border spinner-border-sm" role="status"></div>
+                        Loading...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Equity Curve Mini -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h6 class="mb-0 small"><i class="bi bi-graph-up me-1"></i>Equity Curve</h6>
+            </div>
+            <div class="card-body p-0">
+                <div id="equity-chart" style="height: 150px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ACCOUNT_PK = {{ account.pk }};
+const CSRF_TOKEN = '{{ csrf_token }}';
+let currentTicker = '{{ default_ticker }}';
+let chartData = {{ chart_data_json|safe }};
+let autoRefreshEnabled = true;
+let refreshInterval = null;
+
+// ─── Chart Rendering ─────────────────────────────────────────────
+function renderCandlestickChart(data) {
+    if (!data || !data.dates) {
+        document.getElementById('candlestick-chart').innerHTML = '<div class="text-center text-muted py-5">No chart data available</div>';
+        return;
+    }
+
+    const candlestick = {
+        x: data.dates,
+        open: data.open,
+        high: data.high,
+        low: data.low,
+        close: data.close,
+        type: 'candlestick',
+        increasing: {line: {color: '#26a69a'}, fillcolor: '#26a69a'},
+        decreasing: {line: {color: '#ef5350'}, fillcolor: '#ef5350'},
+        name: currentTicker,
+    };
+
+    const layout = {
+        margin: {l: 50, r: 20, t: 30, b: 30},
+        xaxis: {
+            rangeslider: {visible: false},
+            type: 'category',
+            nticks: 8,
+            showgrid: true,
+            gridcolor: '#f0f0f0',
+        },
+        yaxis: {
+            title: 'Price ($)',
+            side: 'right',
+            showgrid: true,
+            gridcolor: '#f0f0f0',
+        },
+        plot_bgcolor: '#fff',
+        paper_bgcolor: '#fff',
+        font: {size: 11},
+        showlegend: false,
+    };
+
+    Plotly.newPlot('candlestick-chart', [candlestick], layout, {responsive: true, displayModeBar: false});
+
+    // Volume chart
+    const colors = data.close.map((c, i) => {
+        if (i === 0) return '#999';
+        return c >= data.close[i-1] ? '#26a69a' : '#ef5350';
+    });
+
+    const volume = {
+        x: data.dates,
+        y: data.volume,
+        type: 'bar',
+        marker: {color: colors, opacity: 0.5},
+        name: 'Volume',
+    };
+
+    const volLayout = {
+        margin: {l: 50, r: 20, t: 5, b: 20},
+        xaxis: {type: 'category', nticks: 8, showticklabels: false},
+        yaxis: {title: 'Vol', side: 'right', showgrid: false},
+        plot_bgcolor: '#fff',
+        paper_bgcolor: '#fff',
+        font: {size: 10},
+        showlegend: false,
+    };
+
+    Plotly.newPlot('volume-chart', [volume], volLayout, {responsive: true, displayModeBar: false});
+}
+
+// ─── Live Price Updates ──────────────────────────────────────────
+function fetchLivePrice(ticker) {
+    fetch(`/portfolio/api/price/${ticker}/`)
+        .then(r => r.json())
+        .then(q => {
+            if (q.price) {
+                document.getElementById('qq-ticker').textContent = q.ticker;
+                document.getElementById('qq-price').textContent = '$' + q.price.toFixed(2);
+                const changeStr = (q.change >= 0 ? '+' : '') + q.change.toFixed(2) + ' (' + q.change_pct.toFixed(2) + '%)';
+                const changeBadge = document.getElementById('qq-change');
+                changeBadge.textContent = changeStr;
+                changeBadge.className = 'badge fs-6 ' + (q.change >= 0 ? 'bg-success' : 'bg-danger');
+
+                document.getElementById('qq-open').textContent = q.open ? q.open.toFixed(2) : '--';
+                document.getElementById('qq-high').textContent = q.day_high ? q.day_high.toFixed(2) : '--';
+                document.getElementById('qq-low').textContent = q.day_low ? q.day_low.toFixed(2) : '--';
+                document.getElementById('qq-vol').textContent = q.volume ? (q.volume / 1e6).toFixed(1) + 'M' : '--';
+
+                // Update header badges
+                document.getElementById('chart-price-badge').textContent = '$' + q.price.toFixed(2);
+                const headerChange = document.getElementById('chart-change-badge');
+                headerChange.textContent = changeStr;
+                headerChange.className = 'badge ' + (q.change >= 0 ? 'bg-success' : 'bg-danger');
+
+                // Update estimated cost
+                updateEstCost(q.price);
+            }
+        })
+        .catch(() => {});
+}
+
+function updateEstCost(price) {
+    const qty = parseFloat(document.getElementById('order-qty').value) || 0;
+    const assetType = document.getElementById('order-asset-type').value;
+    const mult = (assetType === 'option' || assetType === 'future') ? 100 : 1;
+    const cost = qty * price * mult;
+    document.getElementById('est-cost').textContent = '$' + cost.toFixed(2);
+}
+
+// ─── Chart Data Loading ──────────────────────────────────────────
+function loadChart(ticker, period, interval) {
+    fetch(`/portfolio/api/chart/${ticker}/?period=${period}&interval=${interval}`)
+        .then(r => r.json())
+        .then(data => {
+            if (!data.error) {
+                chartData = data;
+                renderCandlestickChart(data);
+            }
+        })
+        .catch(() => {});
+}
+
+// ─── Position Updates ─────────────────────────────────────────────
+function refreshPositions() {
+    const spinner = document.getElementById('positions-spinner');
+    spinner.classList.remove('d-none');
+    fetch(`/portfolio/api/positions/${ACCOUNT_PK}/`)
+        .then(r => r.json())
+        .then(data => {
+            spinner.classList.add('d-none');
+            // Update summary cards
+            document.getElementById('summary-equity').textContent = '$' + data.total_equity.toFixed(2);
+            document.getElementById('summary-cash').textContent = '$' + data.cash_balance.toFixed(2);
+
+            const upnlEl = document.getElementById('summary-upnl');
+            upnlEl.textContent = '$' + data.total_unrealized_pnl.toFixed(2);
+            upnlEl.className = 'mb-0 mt-1 ' + (data.total_unrealized_pnl >= 0 ? 'text-success' : 'text-danger');
+
+            const rpnlEl = document.getElementById('summary-rpnl');
+            rpnlEl.textContent = '$' + data.total_realized_pnl.toFixed(2);
+            rpnlEl.className = 'mb-0 mt-1 ' + (data.total_realized_pnl >= 0 ? 'text-success' : 'text-danger');
+
+            const retEl = document.getElementById('summary-return');
+            retEl.textContent = data.total_return.toFixed(2) + '%';
+            retEl.className = 'mb-0 mt-1 ' + (data.total_return >= 0 ? 'text-success' : 'text-danger');
+        })
+        .catch(() => { spinner.classList.add('d-none'); });
+}
+
+// ─── Equity Curve ─────────────────────────────────────────────────
+function loadEquityCurve() {
+    fetch(`/portfolio/api/equity/${ACCOUNT_PK}/`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.dates) {
+                const trace = {
+                    x: data.dates,
+                    y: data.equity,
+                    type: 'scatter',
+                    mode: 'lines',
+                    fill: 'tozeroy',
+                    line: {color: data.equity[data.equity.length-1] >= data.equity[0] ? '#26a69a' : '#ef5350', width: 2},
+                    fillcolor: data.equity[data.equity.length-1] >= data.equity[0] ? 'rgba(38,166,154,0.15)' : 'rgba(239,83,80,0.15)',
+                };
+                const layout = {
+                    margin: {l: 40, r: 10, t: 5, b: 20},
+                    xaxis: {showticklabels: false},
+                    yaxis: {side: 'right', tickprefix: '$'},
+                    showlegend: false,
+                    plot_bgcolor: '#fff',
+                    paper_bgcolor: '#fff',
+                    font: {size: 9},
+                };
+                Plotly.newPlot('equity-chart', [trace], layout, {responsive: true, displayModeBar: false});
+            }
+        })
+        .catch(() => {});
+}
+
+// ─── Market Indices ───────────────────────────────────────────────
+function loadMarketIndices() {
+    const indices = ['^GSPC', '^DJI', '^IXIC', '^VIX'];
+    const names = {'%5EGSPC': 'S&P 500', '%5EDJI': 'Dow', '%5EIXIC': 'NASDAQ', '%5EVIX': 'VIX'};
+    const container = document.getElementById('market-indices');
+    container.innerHTML = '';
+
+    indices.forEach(idx => {
+        fetch(`/portfolio/api/price/${idx}/`)
+            .then(r => r.json())
+            .then(q => {
+                const encoded = encodeURIComponent(q.ticker);
+                const name = names[encoded] || q.ticker;
+                const item = document.createElement('div');
+                item.className = 'list-group-item d-flex justify-content-between align-items-center py-1 px-3';
+                item.innerHTML = `
+                    <span class="fw-bold">${name}</span>
+                    <span>
+                        <span class="me-1">${q.price ? q.price.toFixed(0) : '--'}</span>
+                        <span class="badge ${q.change >= 0 ? 'bg-success' : 'bg-danger'}">${q.change_pct ? q.change_pct.toFixed(2) : '0'}%</span>
+                    </span>
+                `;
+                container.appendChild(item);
+            })
+            .catch(() => {});
+    });
+}
+
+// ─── Form Dynamic Controls ───────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+    // Initial render
+    renderCandlestickChart(chartData);
+    fetchLivePrice(currentTicker);
+    loadEquityCurve();
+    loadMarketIndices();
+
+    // Auto-refresh
+    function startAutoRefresh() {
+        refreshInterval = setInterval(() => {
+            if (autoRefreshEnabled) {
+                fetchLivePrice(currentTicker);
+                refreshPositions();
+            }
+        }, 15000); // 15 seconds
+    }
+    startAutoRefresh();
+
+    document.getElementById('auto-refresh-toggle').addEventListener('change', function() {
+        autoRefreshEnabled = this.checked;
+    });
+
+    // Chart ticker search
+    document.getElementById('chart-load-btn').addEventListener('click', function() {
+        currentTicker = document.getElementById('chart-ticker-input').value.trim().toUpperCase();
+        if (currentTicker) {
+            const activeBtn = document.querySelector('#period-btns .active');
+            const period = activeBtn ? activeBtn.dataset.period : '1mo';
+            const interval = activeBtn ? activeBtn.dataset.interval : '15m';
+            loadChart(currentTicker, period, interval);
+            fetchLivePrice(currentTicker);
+            // Also set the order ticker
+            document.getElementById('order-ticker').value = currentTicker;
+        }
+    });
+
+    document.getElementById('chart-ticker-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('chart-load-btn').click();
+        }
+    });
+
+    // Period buttons
+    document.querySelectorAll('#period-btns button').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('#period-btns button').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            loadChart(currentTicker, this.dataset.period, this.dataset.interval);
+        });
+    });
+
+    // Ticker links in positions table
+    document.querySelectorAll('.ticker-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            currentTicker = this.dataset.ticker;
+            document.getElementById('chart-ticker-input').value = currentTicker;
+            document.getElementById('chart-load-btn').click();
+        });
+    });
+
+    // Order type → show/hide limit/stop fields
+    document.getElementById('order-type').addEventListener('change', function() {
+        document.getElementById('limit-price-group').style.display = this.value === 'limit' ? '' : 'none';
+        document.getElementById('stop-price-group').style.display = this.value === 'stop' ? '' : 'none';
+    });
+
+    // Asset type → show/hide options fields
+    document.getElementById('order-asset-type').addEventListener('change', function() {
+        document.getElementById('options-fields').style.display = this.value === 'option' ? '' : 'none';
+    });
+
+    // Side → update button color
+    document.getElementById('order-side').addEventListener('change', function() {
+        const btn = document.getElementById('buy-btn');
+        if (this.value === 'buy') {
+            btn.className = 'btn btn-success btn-sm';
+            btn.innerHTML = '<i class="bi bi-arrow-up-circle me-1"></i>Submit Buy Order';
+        } else {
+            btn.className = 'btn btn-danger btn-sm';
+            btn.innerHTML = '<i class="bi bi-arrow-down-circle me-1"></i>Submit Sell Order';
+        }
+    });
+
+    // Quantity change → update est cost
+    document.getElementById('order-qty').addEventListener('input', function() {
+        const priceText = document.getElementById('qq-price').textContent.replace('$', '');
+        const price = parseFloat(priceText) || 0;
+        updateEstCost(price);
+    });
+});
+</script>
+{% endblock %}

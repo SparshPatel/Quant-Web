@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}Volatility Surface — KappaQuant{% endblock %}
+
+{% block content %}
+<h2 class="mb-1">Implied Volatility Surface</h2>
+<p class="text-muted mb-4">Build a 3D IV surface from live options data using Black-Scholes inversion.</p>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="post" id="analysis-form">
+            {% csrf_token %}
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">{{ form.ticker.label }}</label>
+                    {{ form.ticker }}
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary" id="run-btn">
+                        <span class="spinner-border spinner-border-sm d-none me-1" id="spinner"></span>
+                        Build Surface
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if results %}
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Spot Price</small>
+            <h4 class="mb-0">${{ results.spot }}</h4>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Expiries Used</small>
+            <h4 class="mb-0">{{ results.n_expiries }}</h4>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">IV Data Points</small>
+            <h4 class="mb-0">{{ results.n_points }}</h4>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">{{ results.surface_chart|safe }}</div>
+</div>
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">{{ results.smile_chart|safe }}</div>
+</div>
+
+<div class="text-end mt-3">
+    <button class="btn btn-outline-success btn-sm" onclick="saveAnalysis('volatility_surface')">
+        <i class="bi bi-bookmark-plus me-1"></i>Save Analysis
+    </button>
+</div>
+{% endif %}
+{% endblock %}

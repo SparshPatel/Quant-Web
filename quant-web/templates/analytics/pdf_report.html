@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}{{ tool_label }} Report — KappaQuant{% endblock %}
+
+{% block head %}
+<style>
+    @media print {
+        .sidebar, .no-print { display: none !important; }
+        .main-content { margin: 0; padding: 0; }
+        body { background: white; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 no-print">
+    <h2 class="mb-0">{{ tool_label }} Report</h2>
+    <button class="btn btn-outline-primary btn-sm" onclick="window.print()">
+        <i class="bi bi-printer me-1"></i>Print / Save as PDF
+    </button>
+</div>
+
+{{ report_html|safe }}
+{% endblock %}

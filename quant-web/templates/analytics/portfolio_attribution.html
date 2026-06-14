@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block title %}Portfolio Attribution — KappaQuant{% endblock %}
+
+{% block content %}
+<h2 class="mb-1">Portfolio Attribution</h2>
+<p class="text-muted mb-4">Brinson-Fachler return attribution — allocation effect, selection effect, and active return.</p>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="post" id="analysis-form">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="{{ form.tickers.id_for_label }}" class="form-label fw-semibold">{{ form.tickers.label }}</label>
+                    {{ form.tickers }}
+                    <div class="form-text">{{ form.tickers.help_text }}</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="{{ form.weights.id_for_label }}" class="form-label fw-semibold">{{ form.weights.label }}</label>
+                    {{ form.weights }}
+                    <div class="form-text">{{ form.weights.help_text }}</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="{{ form.benchmark.id_for_label }}" class="form-label fw-semibold">{{ form.benchmark.label }}</label>
+                    {{ form.benchmark }}
+                </div>
+                <div class="col-md-4">
+                    <label for="{{ form.start_date.id_for_label }}" class="form-label fw-semibold">Start Date</label>
+                    {{ form.start_date }}
+                </div>
+                <div class="col-md-4">
+                    <label for="{{ form.end_date.id_for_label }}" class="form-label fw-semibold">End Date</label>
+                    {{ form.end_date }}
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3" id="run-btn">
+                <span class="spinner-border spinner-border-sm d-none me-1" id="spinner"></span>
+                Run Attribution
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if results %}
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Portfolio Return</small>
+            <h4 class="mb-0">{{ results.portfolio_return }}</h4>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Benchmark Return ({{ results.benchmark_ticker }})</small>
+            <h4 class="mb-0">{{ results.benchmark_return }}</h4>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Active Return</small>
+            <h4 class="mb-0 {% if '-' in results.active_return %}text-danger{% else %}text-success{% endif %}">{{ results.active_return }}</h4>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold">Attribution by Holding</div>
+    <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+            <thead><tr><th class="px-3">Ticker</th><th class="px-3">Sector</th><th class="px-3">Weight</th><th class="px-3">Return</th><th class="px-3">Weighted Return</th><th class="px-3">Selection Effect</th></tr></thead>
+            <tbody>
+            {% for a in results.attr_data %}
+            <tr>
+                <td class="px-3 fw-semibold">{{ a.ticker }}</td>
+                <td class="px-3">{{ a.sector }}</td>
+                <td class="px-3">{{ a.weight }}</td>
+                <td class="px-3">{{ a.return }}</td>
+                <td class="px-3">{{ a.weighted_return }}</td>
+                <td class="px-3 {% if '-' in a.selection %}text-danger{% else %}text-success{% endif %}">{{ a.selection }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">{{ results.attr_chart|safe }}</div>
+</div>
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">{{ results.cum_chart|safe }}</div>
+</div>
+
+<div class="text-end mt-3">
+    <button class="btn btn-outline-success btn-sm" onclick="saveAnalysis('portfolio_attribution')">
+        <i class="bi bi-bookmark-plus me-1"></i>Save Analysis
+    </button>
+</div>
+{% endif %}
+{% endblock %}

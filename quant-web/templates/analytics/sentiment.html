@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% block title %}Sentiment Analysis — KappaQuant{% endblock %}
+
+{% block content %}
+<h2 class="mb-1">Sentiment Analysis</h2>
+<p class="text-muted mb-4">News sentiment scoring, analyst recommendations, and key fundamentals.</p>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="post" id="analysis-form">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="{{ form.ticker.id_for_label }}" class="form-label fw-semibold">{{ form.ticker.label }}</label>
+                    {{ form.ticker }}
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3" id="run-btn">
+                <span class="spinner-border spinner-border-sm d-none me-1" id="spinner"></span>
+                Analyze Sentiment
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if results %}
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-0">{{ results.company_name }} ({{ results.ticker }})</h4>
+        <span class="text-muted">{{ results.current_price }}</span>
+        {% if results.upside != 'N/A' %}
+        <span class="badge bg-{% if 'N/A' not in results.upside %}info{% endif %} ms-2">Target {{ results.target_price }} ({{ results.upside }})</span>
+        {% endif %}
+    </div>
+    <div>
+        <span class="badge fs-6 bg-{% if results.overall_label == 'Positive' %}success{% elif results.overall_label == 'Negative' %}danger{% else %}secondary{% endif %}">
+            {{ results.overall_label }} ({{ results.avg_score }})
+        </span>
+    </div>
+</div>
+
+<!-- KPI row -->
+<div class="row g-3 mb-4">
+    <div class="col-md-2">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">P/E</small>
+            <h5 class="mb-0">{{ results.pe }}</h5>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Fwd P/E</small>
+            <h5 class="mb-0">{{ results.fwd_pe }}</h5>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">P/B</small>
+            <h5 class="mb-0">{{ results.pb }}</h5>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Div Yield</small>
+            <h5 class="mb-0">{{ results.div_yield }}</h5>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Beta</small>
+            <h5 class="mb-0">{{ results.beta }}</h5>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Mkt Cap</small>
+            <h5 class="mb-0">{{ results.mkt_cap }}</h5>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">{{ results.gauge_chart|safe }}</div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">{{ results.bar_chart|safe }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- News -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold">Recent News ({{ results.n_articles }} articles)</div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead><tr>
+                    <th class="px-3">Date</th><th class="px-3">Headline</th>
+                    <th class="px-3">Source</th><th class="px-3">Sentiment</th>
+                </tr></thead>
+                <tbody>
+                {% for n in results.news %}
+                <tr>
+                    <td class="px-3 text-nowrap">{{ n.date }}</td>
+                    <td class="px-3">
+                        {% if n.link %}<a href="{{ n.link }}" target="_blank" rel="noopener">{{ n.title }}</a>
+                        {% else %}{{ n.title }}{% endif %}
+                    </td>
+                    <td class="px-3">{{ n.provider }}</td>
+                    <td class="px-3">
+                        <span class="badge bg-{% if n.label == 'Positive' %}success{% elif n.label == 'Negative' %}danger{% else %}secondary{% endif %}">
+                            {{ n.label }} ({{ n.score|floatformat:2 }})
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Analyst Recommendation Summary -->
+{% if results.rec_summary %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold">Consensus Breakdown (Current Month)</div>
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col"><span class="d-block text-muted small">Strong Buy</span><h4 class="text-success">{{ results.rec_summary.strong_buy }}</h4></div>
+            <div class="col"><span class="d-block text-muted small">Buy</span><h4 class="text-success">{{ results.rec_summary.buy }}</h4></div>
+            <div class="col"><span class="d-block text-muted small">Hold</span><h4 class="text-secondary">{{ results.rec_summary.hold }}</h4></div>
+            <div class="col"><span class="d-block text-muted small">Sell</span><h4 class="text-danger">{{ results.rec_summary.sell }}</h4></div>
+            <div class="col"><span class="d-block text-muted small">Strong Sell</span><h4 class="text-danger">{{ results.rec_summary.strong_sell }}</h4></div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent Upgrades / Downgrades -->
+{% if results.recommendations %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold">Recent Upgrades / Downgrades</div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead><tr><th class="px-3">Date</th><th class="px-3">Firm</th><th class="px-3">Action</th><th class="px-3">From</th><th class="px-3">To</th></tr></thead>
+                <tbody>
+                {% for r in results.recommendations %}
+                <tr>
+                    <td class="px-3 text-nowrap">{{ r.date }}</td>
+                    <td class="px-3">{{ r.firm }}</td>
+                    <td class="px-3">
+                        <span class="badge bg-{% if r.action == 'up' %}success{% elif r.action == 'down' %}danger{% elif r.action == 'init' %}info{% else %}secondary{% endif %}">{{ r.action }}</span>
+                    </td>
+                    <td class="px-3">{{ r.from_grade }}</td>
+                    <td class="px-3 fw-semibold">{{ r.grade }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="text-end mt-3">
+    <button class="btn btn-outline-success btn-sm" onclick="saveAnalysis('sentiment')">
+        <i class="bi bi-bookmark-plus me-1"></i>Save Analysis
+    </button>
+</div>
+{% endif %}
+{% endblock %}

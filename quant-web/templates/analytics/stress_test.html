@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% block title %}Stress Testing — KappaQuant{% endblock %}
+
+{% block content %}
+<h2 class="mb-1">Stress Testing</h2>
+<p class="text-muted mb-4">Replay historical crises on your portfolio and simulate custom shocks.</p>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="post" id="analysis-form">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-12">
+                    <label for="{{ form.tickers.id_for_label }}" class="form-label fw-semibold">{{ form.tickers.label }}</label>
+                    {{ form.tickers }}
+                    <div class="form-text">{{ form.tickers.help_text }}</div>
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-semibold">{{ form.scenarios.label }}</label>
+                    <div class="row">
+                    {% for checkbox in form.scenarios %}
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                {{ checkbox.tag }}
+                                <label class="form-check-label" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label for="{{ form.equity_shock.id_for_label }}" class="form-label fw-semibold">{{ form.equity_shock.label }}</label>
+                    {{ form.equity_shock }}
+                    <div class="form-text">{{ form.equity_shock.help_text }}</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="{{ form.portfolio_value.id_for_label }}" class="form-label fw-semibold">{{ form.portfolio_value.label }}</label>
+                    {{ form.portfolio_value }}
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3" id="run-btn">
+                <span class="spinner-border spinner-border-sm d-none me-1" id="spinner"></span>
+                Run Stress Test
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if results %}
+{% if results.results_table %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold">Crisis Scenario Results</div>
+    <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+            <thead><tr><th class="px-3">Scenario</th><th class="px-3">Portfolio Return</th><th class="px-3">Max Drawdown</th><th class="px-3">Worst Day</th><th class="px-3">Period</th></tr></thead>
+            <tbody>
+            {% for r in results.results_table %}
+            <tr>
+                <td class="px-3 fw-semibold">{{ r.scenario }}</td>
+                <td class="px-3 {% if '-' in r.portfolio_return %}text-danger{% else %}text-success{% endif %}">{{ r.portfolio_return }}</td>
+                <td class="px-3 text-danger">{{ r.max_drawdown }}</td>
+                <td class="px-3">{{ r.worst_day }}</td>
+                <td class="px-3"><small class="text-muted">{{ r.recovery_note }}</small></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if results.summary_chart %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">{{ results.summary_chart|safe }}</div>
+</div>
+{% endif %}
+
+{% for chart in results.scenario_charts %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">{{ chart|safe }}</div>
+</div>
+{% endfor %}
+
+{% if results.custom_result %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold">Custom Shock Analysis</div>
+    <div class="card-body">
+        {% if results.custom_result.error %}
+            <p class="text-danger">{{ results.custom_result.error }}</p>
+        {% else %}
+        <div class="row g-3">
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm text-center p-3">
+                    <small class="text-muted">Equity Shock</small>
+                    <h4 class="mb-0 text-danger">{{ results.custom_result.equity_shock }}</h4>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm text-center p-3">
+                    <small class="text-muted">Dollar Loss</small>
+                    <h4 class="mb-0 text-danger">{{ results.custom_result.dollar_loss }}</h4>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm text-center p-3">
+                    <small class="text-muted">Portfolio Vol</small>
+                    <h4 class="mb-0">{{ results.custom_result.ann_vol }}</h4>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm text-center p-3">
+                    <small class="text-muted">Vol-Scaled Loss</small>
+                    <h4 class="mb-0 text-danger">{{ results.custom_result.vol_scaled_loss }}</h4>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<div class="text-end mt-3">
+    <button class="btn btn-outline-success btn-sm" onclick="saveAnalysis('stress_test')">
+        <i class="bi bi-bookmark-plus me-1"></i>Save Analysis
+    </button>
+</div>
+{% endif %}
+{% endblock %}

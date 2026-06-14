@@ -1,0 +1,320 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — KappaQuant{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Dashboard</h2>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-primary bg-opacity-10 rounded-3 p-3 me-3">
+                        <i class="bi bi-briefcase fs-3 text-primary"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-0">My Portfolios</h5>
+                        <small class="text-muted">{{ user.portfolios.count }} portfolio{{ user.portfolios.count|pluralize }}</small>
+                    </div>
+                </div>
+                <a href="{% url 'portfolio:list' %}" class="btn btn-outline-primary btn-sm">View Portfolios</a>
+                <a href="{% url 'portfolio:create' %}" class="btn btn-primary btn-sm">Create New</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!--  CORE ANALYTICS — major cards                                      -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h5 class="text-muted mb-3">Core Analytics</h5>
+<div class="row g-4">
+    <div class="col-md-4">
+        <a href="{% url 'analytics:cvar' %}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 tool-card">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-shield-check fs-1 text-primary mb-3"></i>
+                    <h6 class="text-dark">CVaR Optimization</h6>
+                    <small class="text-muted">Minimize portfolio tail risk using the Rockafellar-Uryasev formulation</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'analytics:efficient_frontier' %}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 tool-card">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-bezier2 fs-1 text-primary mb-3"></i>
+                    <h6 class="text-dark">Efficient Frontier</h6>
+                    <small class="text-muted">Mean-variance frontier with max-Sharpe and min-variance portfolios</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'analytics:risk_dashboard' %}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 tool-card">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-exclamation-triangle fs-1 text-warning mb-3"></i>
+                    <h6 class="text-dark">Risk Dashboard</h6>
+                    <small class="text-muted">VaR, CVaR, correlation, drawdown, and rolling volatility</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'analytics:backtesting' %}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 tool-card">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-clock-history fs-1 text-secondary mb-3"></i>
+                    <h6 class="text-dark">Backtesting Engine</h6>
+                    <small class="text-muted">Test SMA, RSI, momentum, and Bollinger strategies on historical data</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'analytics:dcf' %}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 tool-card">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-calculator fs-1 text-info mb-3"></i>
+                    <h6 class="text-dark">DCF Valuation</h6>
+                    <small class="text-muted">Discounted cash flow analysis with live financial data</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'analytics:options_strategy' %}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 tool-card">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-diagram-3 fs-1 mb-3" style="color: #7c3aed !important;"></i>
+                    <h6 class="text-dark">Options Strategy</h6>
+                    <small class="text-muted">Build and visualize payoff diagrams for 9 preset strategies</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'analytics:stress_test' %}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 tool-card">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-lightning fs-1 text-danger mb-3"></i>
+                    <h6 class="text-dark">Stress Testing</h6>
+                    <small class="text-muted">Replay historical crises (2008, COVID, rate hikes) and custom shock scenarios</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'analytics:rebalancing' %}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 tool-card">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-arrow-repeat fs-1 text-success mb-3"></i>
+                    <h6 class="text-dark">Portfolio Rebalancing</h6>
+                    <small class="text-muted">Compare current vs target weights, compute trades and transaction costs</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'analytics:portfolio_attribution' %}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 tool-card">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-bar-chart-line fs-1 text-primary mb-3"></i>
+                    <h6 class="text-dark">Portfolio Attribution</h6>
+                    <small class="text-muted">Brinson-Fachler return attribution — allocation, selection, and active return</small>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!--  INTERNATIONAL — dedicated section                                 -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h5 class="text-muted mb-3 mt-5">International</h5>
+<div class="row g-4">
+    <div class="col-md-4">
+        <a href="{% url 'analytics:global_macro' %}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 tool-card">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-globe2 fs-1 text-primary mb-3"></i>
+                    <h6 class="text-dark">Global Macro Dashboard</h6>
+                    <small class="text-muted">Compare 45+ world indices side-by-side — performance, correlation, and risk</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'analytics:currency_exposure' %}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 tool-card">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-currency-exchange fs-1 text-success mb-3"></i>
+                    <h6 class="text-dark">Currency Exposure</h6>
+                    <small class="text-muted">Measure FX impact on returns — hedged vs unhedged analysis with conversion costs</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'analytics:cross_border' %}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 tool-card">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-globe-americas fs-1 text-warning mb-3"></i>
+                    <h6 class="text-dark">Cross-Border Portfolio</h6>
+                    <small class="text-muted">International allocation with tax, FX costs, settlement, custody, and regulatory info</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'analytics:yield_curve' %}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 tool-card">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-graph-up fs-1 text-info mb-3"></i>
+                    <h6 class="text-dark">Yield Curve Analysis</h6>
+                    <small class="text-muted">US Treasury curve visualization, spread analysis, and inversion alerts</small>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!--  MORE TOOLS — compact grid                                         -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h5 class="text-muted mb-3 mt-5">More Tools</h5>
+<div class="row g-3">
+    <div class="col-6 col-md-4 col-lg-2">
+        <a href="{% url 'analytics:market_regime' %}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 tool-card">
+                <div class="card-body text-center p-3">
+                    <i class="bi bi-bar-chart-steps fs-4 text-success mb-2"></i>
+                    <small class="d-block text-dark fw-semibold">Market Regimes</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <a href="{% url 'analytics:pairs_trading' %}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 tool-card">
+                <div class="card-body text-center p-3">
+                    <i class="bi bi-arrow-left-right fs-4 text-warning mb-2"></i>
+                    <small class="d-block text-dark fw-semibold">Pairs Trading</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <a href="{% url 'analytics:volatility_surface' %}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 tool-card">
+                <div class="card-body text-center p-3">
+                    <i class="bi bi-layers fs-4 text-danger mb-2"></i>
+                    <small class="d-block text-dark fw-semibold">Vol Surface</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <a href="{% url 'analytics:sentiment' %}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 tool-card">
+                <div class="card-body text-center p-3">
+                    <i class="bi bi-chat-dots fs-4 text-success mb-2"></i>
+                    <small class="d-block text-dark fw-semibold">Sentiment</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <a href="{% url 'analytics:factor_exposure' %}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 tool-card">
+                <div class="card-body text-center p-3">
+                    <i class="bi bi-pie-chart fs-4 text-info mb-2"></i>
+                    <small class="d-block text-dark fw-semibold">Factor Exposure</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <a href="{% url 'analytics:earnings_calendar' %}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 tool-card">
+                <div class="card-body text-center p-3">
+                    <i class="bi bi-calendar-event fs-4 text-danger mb-2"></i>
+                    <small class="d-block text-dark fw-semibold">Earnings Calendar</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <a href="{% url 'analytics:stock_screener' %}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 tool-card">
+                <div class="card-body text-center p-3">
+                    <i class="bi bi-funnel fs-4 text-warning mb-2"></i>
+                    <small class="d-block text-dark fw-semibold">Stock Screener</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <a href="{% url 'analytics:correlation_matrix' %}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 tool-card">
+                <div class="card-body text-center p-3">
+                    <i class="bi bi-grid-3x3 fs-4 text-secondary mb-2"></i>
+                    <small class="d-block text-dark fw-semibold">Correlation Matrix</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <a href="{% url 'analytics:monte_carlo' %}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 tool-card">
+                <div class="card-body text-center p-3">
+                    <i class="bi bi-dice-5 fs-4 text-success mb-2"></i>
+                    <small class="d-block text-dark fw-semibold">Monte Carlo</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <a href="{% url 'analytics:technical_indicators' %}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 tool-card">
+                <div class="card-body text-center p-3">
+                    <i class="bi bi-activity fs-4 text-danger mb-2"></i>
+                    <small class="d-block text-dark fw-semibold">Technical Indicators</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <a href="{% url 'analytics:sector_rotation' %}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 tool-card">
+                <div class="card-body text-center p-3">
+                    <i class="bi bi-arrow-clockwise fs-4 text-primary mb-2"></i>
+                    <small class="d-block text-dark fw-semibold">Sector Rotation</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <a href="{% url 'analytics:dividend_tracker' %}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 tool-card">
+                <div class="card-body text-center p-3">
+                    <i class="bi bi-cash-stack fs-4 text-success mb-2"></i>
+                    <small class="d-block text-dark fw-semibold">Dividend Tracker</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <a href="{% url 'analytics:watchlist' %}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 tool-card">
+                <div class="card-body text-center p-3">
+                    <i class="bi bi-eye fs-4 text-info mb-2"></i>
+                    <small class="d-block text-dark fw-semibold">Watchlist</small>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+{% endblock %}

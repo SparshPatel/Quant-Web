@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}Monte Carlo Simulation — KappaQuant{% endblock %}
+
+{% block content %}
+<h2 class="mb-1">Monte Carlo Simulation</h2>
+<p class="text-muted mb-4">Simulate future price paths using Geometric Brownian Motion and visualize outcome distributions.</p>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="post" id="analysis-form">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="{{ form.ticker.id_for_label }}" class="form-label fw-semibold">{{ form.ticker.label }}</label>
+                    {{ form.ticker }}
+                </div>
+                <div class="col-md-4">
+                    <label for="{{ form.n_simulations.id_for_label }}" class="form-label fw-semibold">{{ form.n_simulations.label }}</label>
+                    {{ form.n_simulations }}
+                </div>
+                <div class="col-md-4">
+                    <label for="{{ form.n_days.id_for_label }}" class="form-label fw-semibold">{{ form.n_days.label }}</label>
+                    {{ form.n_days }}
+                    <div class="form-text">{{ form.n_days.help_text }}</div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3" id="run-btn">
+                <span class="spinner-border spinner-border-sm d-none me-1" id="spinner"></span>
+                Run Simulation
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if results %}
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Current Price</small>
+            <h4 class="mb-0">{{ results.current_price }}</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Median Terminal</small>
+            <h4 class="mb-0">{{ results.median_terminal }}</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Prob. of Profit</small>
+            <h4 class="mb-0 text-success">{{ results.prob_profit }}</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Expected Return</small>
+            <h4 class="mb-0">{{ results.expected_return }}</h4>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">5th Percentile</small>
+            <h5 class="mb-0 text-danger">{{ results.p5_terminal }}</h5>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">95th Percentile</small>
+            <h5 class="mb-0 text-success">{{ results.p95_terminal }}</h5>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Ann. Drift</small>
+            <h5 class="mb-0">{{ results.mu_ann }}</h5>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Ann. Volatility</small>
+            <h5 class="mb-0">{{ results.sigma_ann }}</h5>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">{{ results.fan_chart|safe }}</div>
+</div>
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">{{ results.hist_chart|safe }}</div>
+</div>
+
+<div class="text-end mt-3">
+    <button class="btn btn-outline-success btn-sm" onclick="saveAnalysis('monte_carlo')">
+        <i class="bi bi-bookmark-plus me-1"></i>Save Analysis
+    </button>
+</div>
+{% endif %}
+{% endblock %}

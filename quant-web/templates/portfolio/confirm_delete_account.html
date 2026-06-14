@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Delete Trading Account{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Delete Trading Account</h5>
+            </div>
+            <div class="card-body">
+                <p>Are you sure you want to delete <strong>{{ account.name }}</strong>?</p>
+                <p class="text-muted">This will permanently delete all positions, orders, and trade history for this account. This action cannot be undone.</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash me-1"></i>Delete Account
+                        </button>
+                        <a href="{% url 'portfolio:trading_accounts' %}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block title %}{{ portfolio.name }} — KappaQuant{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-0">{{ portfolio.name }}</h2>
+        {% if portfolio.description %}<p class="text-muted mb-0">{{ portfolio.description }}</p>{% endif %}
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'portfolio:edit' pk=portfolio.pk %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-pencil me-1"></i>Edit
+        </a>
+        <a href="{% url 'portfolio:delete' pk=portfolio.pk %}" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-trash me-1"></i>Delete
+        </a>
+    </div>
+</div>
+
+<!-- Summary cards -->
+{% if holdings %}
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Market Value</small>
+            <h4 class="mb-0">${{ total_value }}</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Cost Basis</small>
+            <h4 class="mb-0">${{ total_cost }}</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Total P&L</small>
+            <h4 class="mb-0 {% if total_pnl_positive %}text-success{% else %}text-danger{% endif %}">
+                ${{ total_pnl }} ({{ total_pnl_pct }}%)
+            </h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Holdings</small>
+            <h4 class="mb-0">{{ holdings|length }}</h4>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Holdings table -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold">Holdings</div>
+    <div class="card-body p-0">
+        {% if holdings %}
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th class="px-3">Ticker</th>
+                    <th class="px-3">Shares</th>
+                    <th class="px-3">Avg Cost</th>
+                    <th class="px-3">Current</th>
+                    <th class="px-3">Value</th>
+                    <th class="px-3">P&L</th>
+                    <th class="px-3"></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for h in holdings %}
+            <tr>
+                <td class="px-3 fw-semibold">{{ h.holding.ticker }}</td>
+                <td class="px-3">{{ h.holding.shares }}</td>
+                <td class="px-3">${{ h.holding.avg_cost }}</td>
+                <td class="px-3">${{ h.current_price }}</td>
+                <td class="px-3">${{ h.market_value }}</td>
+                <td class="px-3 {% if h.pnl_positive %}text-success{% else %}text-danger{% endif %}">
+                    ${{ h.pnl }} ({{ h.pnl_pct }}%)
+                </td>
+                <td class="px-3">
+                    <form method="post" action="{% url 'portfolio:holding_delete' portfolio_pk=portfolio.pk holding_pk=h.holding.pk %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted text-center py-4 mb-0">No holdings yet. Add one below.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add holding form -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold">Add Holding</div>
+    <div class="card-body">
+        <form method="post" action="{% url 'portfolio:holding_add' portfolio_pk=portfolio.pk %}">
+            {% csrf_token %}
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Ticker</label>
+                    {{ holding_form.ticker }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Shares</label>
+                    {{ holding_form.shares }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Avg Cost ($)</label>
+                    {{ holding_form.avg_cost }}
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-plus-lg me-1"></i>Add
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

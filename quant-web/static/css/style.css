@@ -1,0 +1,77 @@
+/* Sidebar */
+.sidebar {
+    width: 260px;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 100;
+    overflow-y: auto;
+}
+
+.main-content {
+    margin-left: 260px;
+    min-height: 100vh;
+    background-color: #f8f9fa;
+}
+
+/* Nav links */
+.sidebar .nav-link {
+    border-radius: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+    transition: background-color 0.15s;
+}
+
+.sidebar .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar .nav-link.active {
+    background-color: rgba(13, 110, 253, 0.8);
+}
+
+/* Tool cards on dashboard */
+.tool-card {
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.tool-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Loading state */
+.loading .spinner-border {
+    display: inline-block !important;
+}
+
+/* Plotly charts */
+.js-plotly-plot {
+    width: 100% !important;
+}
+
+/* Tables */
+.table th {
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: #6c757d;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        min-height: auto;
+        position: relative;
+    }
+
+    .main-content {
+        margin-left: 0;
+    }
+
+    #wrapper {
+        flex-direction: column;
+    }
+}

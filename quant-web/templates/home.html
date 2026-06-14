@@ -1,0 +1,60 @@
+{% extends 'base_public.html' %}
+{% block title %}KappaQuant — Quantitative Finance Toolkit{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row align-items-center min-vh-75">
+        <div class="col-lg-6 mb-4">
+            <h1 class="display-4 fw-bold mb-3">Quantitative Finance<br>in Your Browser</h1>
+            <p class="lead text-muted mb-4">
+                Portfolio optimization, regime detection, pairs trading, volatility surfaces,
+                DCF valuations — all powered by real market data. No spreadsheets required.
+            </p>
+            <div class="d-flex gap-3">
+                <a href="{% url 'accounts:register' %}" class="btn btn-primary btn-lg">Get Started</a>
+                <a href="{% url 'accounts:login' %}" class="btn btn-outline-secondary btn-lg">Log in</a>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="row g-3">
+                <div class="col-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center p-4">
+                            <i class="bi bi-shield-check fs-1 text-primary mb-2"></i>
+                            <h6>CVaR Optimization</h6>
+                            <small class="text-muted">Minimize tail risk across any portfolio</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center p-4">
+                            <i class="bi bi-bar-chart-steps fs-1 text-success mb-2"></i>
+                            <h6>Market Regimes</h6>
+                            <small class="text-muted">HMM-based bull/bear detection</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center p-4">
+                            <i class="bi bi-arrow-left-right fs-1 text-warning mb-2"></i>
+                            <h6>Pairs Trading</h6>
+                            <small class="text-muted">Cointegration & mean-reversion</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center p-4">
+                            <i class="bi bi-layers fs-1 text-danger mb-2"></i>
+                            <h6>Vol Surface</h6>
+                            <small class="text-muted">Live implied volatility surfaces</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

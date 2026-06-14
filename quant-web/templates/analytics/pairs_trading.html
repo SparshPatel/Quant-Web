@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}Pairs Trading — KappaQuant{% endblock %}
+
+{% block content %}
+<h2 class="mb-1">Pairs Trading</h2>
+<p class="text-muted mb-4">Cointegration analysis and mean-reversion strategy backtesting.</p>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="post" id="analysis-form">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">{{ form.ticker1.label }}</label>
+                    {{ form.ticker1 }}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">{{ form.ticker2.label }}</label>
+                    {{ form.ticker2 }}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Start Date</label>
+                    {{ form.start_date }}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">End Date</label>
+                    {{ form.end_date }}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">{{ form.entry_z.label }}</label>
+                    {{ form.entry_z }}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">{{ form.lookback.label }}</label>
+                    {{ form.lookback }}
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3" id="run-btn">
+                <span class="spinner-border spinner-border-sm d-none me-1" id="spinner"></span>
+                Analyze Pair
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if results %}
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold">Cointegration Test</div>
+            <div class="card-body">
+                <p>Test statistic: <strong>{{ results.coint_stat }}</strong></p>
+                <p>P-value: <strong>{{ results.coint_pvalue }}</strong></p>
+                {% if results.is_cointegrated %}
+                <span class="badge bg-success">Cointegrated at 5% level</span>
+                {% else %}
+                <span class="badge bg-warning text-dark">NOT cointegrated at 5% level</span>
+                {% endif %}
+                <p class="mt-2 mb-0">Hedge ratio: <strong>{{ results.hedge_ratio }}</strong></p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold">Backtest Results</div>
+            <div class="card-body">
+                <p>Total return: <strong>{{ results.total_return }}</strong></p>
+                <p>Sharpe ratio: <strong>{{ results.sharpe }}</strong></p>
+                <p>Max drawdown: <strong>{{ results.max_drawdown }}</strong></p>
+                <p class="mb-0">Number of trades: <strong>{{ results.num_trades }}</strong></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">{{ results.spread_chart|safe }}</div>
+</div>
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">{{ results.cumulative_chart|safe }}</div>
+</div>
+
+<div class="text-end mt-3">
+    <button class="btn btn-outline-success btn-sm" onclick="saveAnalysis('pairs_trading')">
+        <i class="bi bi-bookmark-plus me-1"></i>Save Analysis
+    </button>
+</div>
+{% endif %}
+{% endblock %}

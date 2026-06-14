@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}DCF Valuation — KappaQuant{% endblock %}
+
+{% block content %}
+<h2 class="mb-1">DCF Valuation</h2>
+<p class="text-muted mb-4">Discounted cash flow analysis using live financial data from Yahoo Finance.</p>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="post" id="analysis-form">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">{{ form.ticker.label }}</label>
+                    {{ form.ticker }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">{{ form.growth_rate.label }}</label>
+                    {{ form.growth_rate }}
+                    <div class="form-text">{{ form.growth_rate.help_text }}</div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">{{ form.discount_rate.label }}</label>
+                    {{ form.discount_rate }}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">{{ form.terminal_growth.label }}</label>
+                    {{ form.terminal_growth }}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">{{ form.projection_years.label }}</label>
+                    {{ form.projection_years }}
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3" id="run-btn">
+                <span class="spinner-border spinner-border-sm d-none me-1" id="spinner"></span>
+                Run DCF
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if results %}
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Current Price</small>
+            <h4 class="mb-0">{{ results.current_price }}</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Intrinsic Value</small>
+            <h4 class="mb-0">{{ results.intrinsic_value }}</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Upside / Downside</small>
+            <h4 class="mb-0">{{ results.upside }}</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Verdict</small>
+            <h4 class="mb-0 {% if results.verdict == 'Undervalued' %}text-success{% elif results.verdict == 'Overvalued' %}text-danger{% endif %}">
+                {{ results.verdict }}
+            </h4>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white fw-semibold">Valuation Summary — {{ results.company }}</div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <tbody>
+                    <tr><td class="px-3">Latest FCF</td><td class="px-3 fw-semibold">{{ results.fcf }}</td></tr>
+                    <tr><td class="px-3">Enterprise Value</td><td class="px-3 fw-semibold">{{ results.enterprise_value }}</td></tr>
+                    <tr><td class="px-3">Net Debt</td><td class="px-3 fw-semibold">{{ results.net_debt }}</td></tr>
+                    <tr><td class="px-3">Equity Value</td><td class="px-3 fw-semibold">{{ results.equity_value }}</td></tr>
+                    <tr><td class="px-3">Shares Outstanding</td><td class="px-3 fw-semibold">{{ results.shares }}</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">{{ results.waterfall_chart|safe }}</div>
+</div>
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">{{ results.fcf_chart|safe }}</div>
+</div>
+
+<div class="text-end mt-3">
+    <button class="btn btn-outline-success btn-sm" onclick="saveAnalysis('dcf')">
+        <i class="bi bi-bookmark-plus me-1"></i>Save Analysis
+    </button>
+</div>
+{% endif %}
+{% endblock %}

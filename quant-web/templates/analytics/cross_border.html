@@ -1,0 +1,259 @@
+{% extends 'base.html' %}
+{% block title %}Cross-Border Portfolio — KappaQuant{% endblock %}
+
+{% block content %}
+<h2 class="mb-1"><i class="bi bi-globe-americas me-2"></i>Cross-Border Portfolio Builder</h2>
+<p class="text-muted mb-4">Build an international portfolio and see the full picture: withholding taxes, FX costs, settlement, custody, and regulatory requirements.</p>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="post" id="analysis-form">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="{{ form.indices.id_for_label }}" class="form-label fw-semibold">{{ form.indices.label }}</label>
+                    {{ form.indices }}
+                    <div class="form-text">{{ form.indices.help_text }}</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="{{ form.home_country.id_for_label }}" class="form-label fw-semibold">{{ form.home_country.label }}</label>
+                    {{ form.home_country }}
+                    <div class="mt-3">
+                        <label for="{{ form.portfolio_value.id_for_label }}" class="form-label fw-semibold">{{ form.portfolio_value.label }}</label>
+                        {{ form.portfolio_value }}
+                    </div>
+                    <div class="mt-3">
+                        <label for="{{ form.dividend_yield.id_for_label }}" class="form-label fw-semibold">{{ form.dividend_yield.label }}</label>
+                        {{ form.dividend_yield }}
+                        <div class="form-text">{{ form.dividend_yield.help_text }}</div>
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3" id="run-btn">
+                <span class="spinner-border spinner-border-sm d-none me-1" id="spinner"></span>
+                Build Report
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if results %}
+<!-- Top KPIs -->
+<div class="row g-3 mb-4">
+    <div class="col-md-2">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Countries</small>
+            <h4 class="mb-0">{{ results.n_countries }}</h4>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Currencies</small>
+            <h4 class="mb-0">{{ results.n_currencies }}</h4>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Diversification</small>
+            <h4 class="mb-0 {% if results.diversification_score >= 60 %}text-success{% elif results.diversification_score >= 30 %}text-warning{% else %}text-danger{% endif %}">{{ results.diversification_score }}%</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Total Annual Cost</small>
+            <h5 class="mb-0 text-danger">{{ results.cost_summary.total_annual_cost }}</h5>
+            <small class="text-muted">{{ results.cost_summary.total_annual_abs }}</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Portfolio Value</small>
+            <h5 class="mb-0">{{ results.cost_summary.portfolio_value }}</h5>
+        </div>
+    </div>
+</div>
+
+<!-- Cost Breakdown -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold"><i class="bi bi-cash-stack me-2"></i>Annual Cost Breakdown</div>
+    <div class="card-body">
+        <div class="row g-4">
+            <div class="col-md-4 text-center">
+                <h6 class="text-muted">FX Conversion Cost</h6>
+                <h3>{{ results.cost_summary.fx_conversion_cost }}</h3>
+                <small class="text-muted">{{ results.cost_summary.fx_conversion_abs }}</small>
+            </div>
+            <div class="col-md-4 text-center">
+                <h6 class="text-muted">Withholding Tax (on Dividends)</h6>
+                <h3>{{ results.cost_summary.withholding_tax_cost }}</h3>
+                <small class="text-muted">{{ results.cost_summary.withholding_tax_abs }}</small>
+            </div>
+            <div class="col-md-4 text-center">
+                <h6 class="text-muted">Est. Custody / Access Fees</h6>
+                <h3>{{ results.cost_summary.est_custody_fee }}</h3>
+                <small class="text-muted">{{ results.cost_summary.est_custody_abs }}</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Allocation Table -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold"><i class="bi bi-table me-2"></i>Allocation Detail</div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th class="px-3">Index</th>
+                        <th class="px-3">Country</th>
+                        <th class="px-3">Currency</th>
+                        <th class="px-3">Weight</th>
+                        <th class="px-3">Exchange</th>
+                        <th class="px-3">Settlement</th>
+                        <th class="px-3">WHT (Stat.)</th>
+                        <th class="px-3">WHT (Treaty)</th>
+                        <th class="px-3">FX Spread</th>
+                        <th class="px-3">Custody</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for a in results.allocations %}
+                <tr>
+                    <td class="px-3 fw-semibold">{{ a.name }}</td>
+                    <td class="px-3">{{ a.country }}</td>
+                    <td class="px-3">{{ a.currency }}</td>
+                    <td class="px-3">{{ a.weight }}</td>
+                    <td class="px-3"><small>{{ a.exchange }}</small></td>
+                    <td class="px-3">{{ a.settlement }}</td>
+                    <td class="px-3">{{ a.wht_statutory }}</td>
+                    <td class="px-3">{{ a.wht_treaty }}</td>
+                    <td class="px-3">{{ a.fx_spread }}</td>
+                    <td class="px-3">
+                        <span class="badge {% if a.custody_complexity <= 2 %}bg-success{% elif a.custody_complexity <= 3 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                            {{ a.complexity_label }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Region Breakdown -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold">Region Breakdown</div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead><tr><th class="px-3">Region</th><th class="px-3">Weight</th></tr></thead>
+                    <tbody>
+                    {% for r in results.region_breakdown %}
+                    <tr><td class="px-3">{{ r.region }}</td><td class="px-3 fw-semibold">{{ r.weight }}</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <!-- Currency Breakdown -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold">Currency Breakdown</div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead><tr><th class="px-3">Currency</th><th class="px-3">Weight</th><th class="px-3">Spread</th></tr></thead>
+                    <tbody>
+                    {% for c in results.currency_breakdown %}
+                    <tr><td class="px-3">{{ c.currency }}</td><td class="px-3 fw-semibold">{{ c.weight }}</td><td class="px-3">{{ c.fx_spread }}</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <!-- Settlement -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold">Settlement Cycles</div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead><tr><th class="px-3">Cycle</th><th class="px-3">Markets</th><th class="px-3">Note</th></tr></thead>
+                    <tbody>
+                    {% for s in results.settlement_summary %}
+                    <tr><td class="px-3 fw-semibold">{{ s.settlement }}</td><td class="px-3"><small>{{ s.countries }}</small></td><td class="px-3"><small class="text-muted">{{ s.note }}</small></td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Capital Gains Notes (per allocation) -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold"><i class="bi bi-bank me-2"></i>Capital Gains Tax Notes</div>
+    <div class="card-body">
+        {% for a in results.allocations %}
+        {% if a.capital_gains_note %}
+        <p class="mb-2"><strong>{{ a.name }} ({{ a.country }})</strong>: {{ a.capital_gains_note }}</p>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Regulatory / Custody Notes -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold"><i class="bi bi-shield-lock me-2"></i>Regulatory & Custody Notes</div>
+    <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+            <thead><tr><th class="px-3">Market</th><th class="px-3">Regulator</th><th class="px-3">Notes</th></tr></thead>
+            <tbody>
+            {% for n in results.regulatory_notes %}
+            <tr>
+                <td class="px-3 fw-semibold">{{ n.country }}</td>
+                <td class="px-3">{{ n.regulator }}</td>
+                <td class="px-3"><small>{{ n.note }}</small></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Trading Hours Advisory -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold"><i class="bi bi-clock me-2"></i>Trading Hours Advisory</div>
+    <div class="card-body">
+        {% for note in results.hours_advisory %}
+        <p class="mb-1"><i class="bi bi-info-circle text-primary me-2"></i>{{ note }}</p>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Key Risks -->
+{% if results.key_risks %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold"><i class="bi bi-exclamation-diamond me-2"></i>Key Risks to Monitor</div>
+    <div class="card-body">
+        <div class="row">
+            {% for risk in results.key_risks %}
+            <div class="col-md-6 mb-1">
+                <small><i class="bi bi-dot text-danger"></i>{{ risk }}</small>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="text-end mt-3">
+    <button class="btn btn-outline-success btn-sm" onclick="saveAnalysis('cross_border')">
+        <i class="bi bi-bookmark-plus me-1"></i>Save Analysis
+    </button>
+</div>
+{% endif %}
+{% endblock %}

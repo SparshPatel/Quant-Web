@@ -1,0 +1,14 @@
+Django>=5.0,<6.0
+psycopg2-binary>=2.9
+python-dotenv>=1.0
+numpy>=1.24
+pandas>=2.0
+yfinance>=0.2
+scipy>=1.10
+cvxpy>=1.4
+hmmlearn>=0.3
+statsmodels>=0.14
+plotly>=5.15
+matplotlib>=3.7
+gunicorn>=21.2
+whitenoise>=6.5

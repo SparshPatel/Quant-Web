@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block title %}Options Strategy Builder — KappaQuant{% endblock %}
+
+{% block content %}
+<h2 class="mb-1">Options Strategy Builder</h2>
+<p class="text-muted mb-4">Visualize payoff diagrams for preset options strategies using live pricing.</p>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="post" id="analysis-form">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="{{ form.ticker.id_for_label }}" class="form-label fw-semibold">{{ form.ticker.label }}</label>
+                    {{ form.ticker }}
+                </div>
+                <div class="col-md-4">
+                    <label for="{{ form.strategy.id_for_label }}" class="form-label fw-semibold">{{ form.strategy.label }}</label>
+                    {{ form.strategy }}
+                </div>
+                <div class="col-md-4">
+                    <label for="{{ form.custom_strike.id_for_label }}" class="form-label fw-semibold">{{ form.custom_strike.label }}</label>
+                    {{ form.custom_strike }}
+                    <div class="form-text">{{ form.custom_strike.help_text }}</div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3" id="run-btn">
+                <span class="spinner-border spinner-border-sm d-none me-1" id="spinner"></span>
+                Build Strategy
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if results %}
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold">Summary</div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <tr><td class="text-muted">Ticker</td><td class="fw-semibold">{{ results.ticker }}</td></tr>
+                    <tr><td class="text-muted">Spot Price</td><td>{{ results.spot_price }}</td></tr>
+                    <tr><td class="text-muted">Strategy</td><td>{{ results.strategy }}</td></tr>
+                    <tr><td class="text-muted">Net Premium</td><td>{{ results.net_premium }}</td></tr>
+                    <tr><td class="text-muted">Max Profit</td><td class="text-success">{{ results.max_profit }}</td></tr>
+                    <tr><td class="text-muted">Max Loss</td><td class="text-danger">{{ results.max_loss }}</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold">Breakeven Points</div>
+            <div class="card-body">
+                {% for be in results.breakevens %}
+                <span class="badge bg-secondary me-1">${{ be }}</span>
+                {% empty %}
+                <span class="text-muted">None</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold">Legs</div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead><tr><th class="px-3">Type</th><th class="px-3">Side</th><th class="px-3">Strike</th><th class="px-3">Price</th></tr></thead>
+                    <tbody>
+                    {% for leg in results.legs %}
+                    <tr>
+                        <td class="px-3">{{ leg.type }}</td>
+                        <td class="px-3">{{ leg.side }}</td>
+                        <td class="px-3">{{ leg.strike }}</td>
+                        <td class="px-3">{{ leg.price }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">{{ results.payoff_chart|safe }}</div>
+</div>
+
+<div class="text-end mt-3">
+    <button class="btn btn-outline-success btn-sm" onclick="saveAnalysis('options_strategy')">
+        <i class="bi bi-bookmark-plus me-1"></i>Save Analysis
+    </button>
+</div>
+{% endif %}
+{% endblock %}

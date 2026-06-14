@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% block title %}Technical Indicators — KappaQuant{% endblock %}
+
+{% block content %}
+<h2 class="mb-1">Technical Indicators</h2>
+<p class="text-muted mb-4">RSI, MACD, Bollinger Bands, and SMA overlaid on price charts.</p>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="post" id="analysis-form">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="{{ form.ticker.id_for_label }}" class="form-label fw-semibold">{{ form.ticker.label }}</label>
+                    {{ form.ticker }}
+                </div>
+                <div class="col-md-4">
+                    <label for="{{ form.start_date.id_for_label }}" class="form-label fw-semibold">Start Date</label>
+                    {{ form.start_date }}
+                </div>
+                <div class="col-md-4">
+                    <label for="{{ form.end_date.id_for_label }}" class="form-label fw-semibold">End Date</label>
+                    {{ form.end_date }}
+                </div>
+                <div class="col-md-4">
+                    <label for="{{ form.sma_windows.id_for_label }}" class="form-label fw-semibold">{{ form.sma_windows.label }}</label>
+                    {{ form.sma_windows }}
+                    <div class="form-text">{{ form.sma_windows.help_text }}</div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-check mt-4">
+                        {{ form.show_rsi }}
+                        <label class="form-check-label" for="{{ form.show_rsi.id_for_label }}">{{ form.show_rsi.label }}</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-check mt-4">
+                        {{ form.show_macd }}
+                        <label class="form-check-label" for="{{ form.show_macd.id_for_label }}">{{ form.show_macd.label }}</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-check mt-4">
+                        {{ form.show_bb }}
+                        <label class="form-check-label" for="{{ form.show_bb.id_for_label }}">{{ form.show_bb.label }}</label>
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3" id="run-btn">
+                <span class="spinner-border spinner-border-sm d-none me-1" id="spinner"></span>
+                Generate Chart
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if results %}
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Last Close</small>
+            <h4 class="mb-0">{{ results.last_close }}</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">RSI</small>
+            <h4 class="mb-0">{{ results.last_rsi }}</h4>
+            <small class="{% if results.rsi_signal == 'Overbought' %}text-danger{% elif results.rsi_signal == 'Oversold' %}text-success{% else %}text-muted{% endif %}">{{ results.rsi_signal }}</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">MACD</small>
+            <h4 class="mb-0">{{ results.last_macd }}</h4>
+            <small class="{% if results.macd_signal == 'Bullish' %}text-success{% else %}text-danger{% endif %}">{{ results.macd_signal }}</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Period</small>
+            <h5 class="mb-0">{{ results.date_range }}</h5>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">{{ results.chart|safe }}</div>
+</div>
+
+<div class="text-end mt-3">
+    <button class="btn btn-outline-success btn-sm" onclick="saveAnalysis('technical_indicators')">
+        <i class="bi bi-bookmark-plus me-1"></i>Save Analysis
+    </button>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Trade History — {{ account.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-clock-history me-2"></i>Trade History — {{ account.name }}</h4>
+        <small class="text-muted">Complete log of all executed trades</small>
+    </div>
+    <a href="{% url 'portfolio:trading_dashboard' pk=account.pk %}" class="btn btn-dark btn-sm">
+        <i class="bi bi-lightning-charge me-1"></i>Back to Terminal
+    </a>
+</div>
+
+<!-- Closed Positions -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="bi bi-archive me-2"></i>Closed Positions</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Type</th>
+                        <th>Side</th>
+                        <th class="text-end">Qty</th>
+                        <th class="text-end">Entry</th>
+                        <th class="text-end">Exit</th>
+                        <th class="text-end">Realized P&L</th>
+                        <th>Opened</th>
+                        <th>Closed</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pos in closed_positions %}
+                    <tr>
+                        <td class="fw-bold">{{ pos.ticker }}</td>
+                        <td><span class="badge bg-secondary">{{ pos.get_asset_type_display }}</span></td>
+                        <td>
+                            <span class="badge {% if pos.side == 'long' %}bg-success{% else %}bg-danger{% endif %}">
+                                {{ pos.side|upper }}
+                            </span>
+                        </td>
+                        <td class="text-end">{{ pos.quantity }}</td>
+                        <td class="text-end">${{ pos.entry_price|floatformat:2 }}</td>
+                        <td class="text-end">
+                            {% if pos.closed_at %}--{% endif %}
+                        </td>
+                        <td class="text-end fw-bold {% if pos.realized_pnl >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            {% if pos.realized_pnl is not None %}${{ pos.realized_pnl|floatformat:2 }}{% else %}--{% endif %}
+                        </td>
+                        <td class="small">{{ pos.opened_at|date:"M d, H:i" }}</td>
+                        <td class="small">{{ pos.closed_at|date:"M d, H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="9" class="text-center text-muted py-3">No closed positions.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- All Trades -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="bi bi-list-columns me-2"></i>Execution Log</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Time</th>
+                        <th>Symbol</th>
+                        <th>Side</th>
+                        <th class="text-end">Qty</th>
+                        <th class="text-end">Price</th>
+                        <th class="text-end">Total</th>
+                        <th class="text-end">Commission</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for trade in trades %}
+                    <tr>
+                        <td class="small">{{ trade.executed_at|date:"M d, Y H:i:s" }}</td>
+                        <td class="fw-bold">{{ trade.ticker }}</td>
+                        <td>
+                            <span class="badge {% if trade.side == 'buy' %}bg-success{% else %}bg-danger{% endif %}">
+                                {{ trade.side|upper }}
+                            </span>
+                        </td>
+                        <td class="text-end">{{ trade.quantity }}</td>
+                        <td class="text-end">${{ trade.price|floatformat:2 }}</td>
+                        <td class="text-end">${{ trade.quantity|floatformat:0 }}</td>
+                        <td class="text-end">${{ trade.commission|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7" class="text-center text-muted py-3">No trades executed yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

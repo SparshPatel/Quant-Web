@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% block title %}Risk Dashboard — KappaQuant{% endblock %}
+
+{% block content %}
+<h2 class="mb-1">Risk Dashboard</h2>
+<p class="text-muted mb-4">Portfolio-level VaR, CVaR, correlation, drawdown, and volatility analysis.</p>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="post" id="analysis-form">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-12">
+                    <label for="{{ form.tickers.id_for_label }}" class="form-label fw-semibold">{{ form.tickers.label }}</label>
+                    {{ form.tickers }}
+                    <div class="form-text">{{ form.tickers.help_text }}</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="{{ form.start_date.id_for_label }}" class="form-label fw-semibold">Start Date</label>
+                    {{ form.start_date }}
+                </div>
+                <div class="col-md-4">
+                    <label for="{{ form.end_date.id_for_label }}" class="form-label fw-semibold">End Date</label>
+                    {{ form.end_date }}
+                </div>
+                <div class="col-md-4">
+                    <label for="{{ form.confidence.id_for_label }}" class="form-label fw-semibold">{{ form.confidence.label }}</label>
+                    {{ form.confidence }}
+                    <div class="form-text">{{ form.confidence.help_text }}</div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3" id="run-btn">
+                <span class="spinner-border spinner-border-sm d-none me-1" id="spinner"></span>
+                Analyze Risk
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if results %}
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Ann. Return</small>
+            <h4 class="mb-0">{{ results.ann_return }}</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Ann. Volatility</small>
+            <h4 class="mb-0">{{ results.ann_vol }}</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Sharpe Ratio</small>
+            <h4 class="mb-0">{{ results.sharpe }}</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Max Drawdown</small>
+            <h4 class="mb-0 text-danger">{{ results.max_drawdown }}</h4>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">VaR ({{ results.confidence }} Historical)</small>
+            <h5 class="mb-0">{{ results.var_hist }}</h5>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">VaR ({{ results.confidence }} Parametric)</small>
+            <h5 class="mb-0">{{ results.var_param }}</h5>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">CVaR ({{ results.confidence }})</small>
+            <h5 class="mb-0 text-danger">{{ results.cvar }}</h5>
+        </div>
+    </div>
+</div>
+
+<!-- Asset Stats Table -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold">Per-Asset Statistics</div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead><tr>
+                    <th class="px-3">Ticker</th><th class="px-3">Ann. Return</th><th class="px-3">Ann. Vol</th>
+                    <th class="px-3">Sharpe</th><th class="px-3">Max DD</th><th class="px-3">Skew</th><th class="px-3">Kurtosis</th>
+                </tr></thead>
+                <tbody>
+                {% for a in results.asset_stats %}
+                <tr>
+                    <td class="px-3 fw-semibold">{{ a.ticker }}</td>
+                    <td class="px-3">{{ a.ann_return }}</td>
+                    <td class="px-3">{{ a.ann_vol }}</td>
+                    <td class="px-3">{{ a.sharpe }}</td>
+                    <td class="px-3">{{ a.max_dd }}</td>
+                    <td class="px-3">{{ a.skew }}</td>
+                    <td class="px-3">{{ a.kurtosis }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">{{ results.corr_chart|safe }}</div>
+</div>
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">{{ results.dist_chart|safe }}</div>
+</div>
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">{{ results.vol_chart|safe }}</div>
+</div>
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">{{ results.dd_chart|safe }}</div>
+</div>
+
+<div class="text-end mt-3">
+    <button class="btn btn-outline-success btn-sm" onclick="saveAnalysis('risk_dashboard')">
+        <i class="bi bi-bookmark-plus me-1"></i>Save Analysis
+    </button>
+</div>
+{% endif %}
+{% endblock %}

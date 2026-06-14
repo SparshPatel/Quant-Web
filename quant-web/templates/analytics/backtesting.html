@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block title %}Backtesting Engine — KappaQuant{% endblock %}
+
+{% block content %}
+<h2 class="mb-1">Backtesting Engine</h2>
+<p class="text-muted mb-4">Test trading strategies against historical data and compare to buy-and-hold.</p>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="post" id="analysis-form">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="{{ form.ticker.id_for_label }}" class="form-label fw-semibold">{{ form.ticker.label }}</label>
+                    {{ form.ticker }}
+                </div>
+                <div class="col-md-4">
+                    <label for="{{ form.strategy.id_for_label }}" class="form-label fw-semibold">{{ form.strategy.label }}</label>
+                    {{ form.strategy }}
+                </div>
+                <div class="col-md-4">
+                    <label for="{{ form.initial_capital.id_for_label }}" class="form-label fw-semibold">{{ form.initial_capital.label }}</label>
+                    {{ form.initial_capital }}
+                </div>
+                <div class="col-md-3">
+                    <label for="{{ form.start_date.id_for_label }}" class="form-label fw-semibold">Start Date</label>
+                    {{ form.start_date }}
+                </div>
+                <div class="col-md-3">
+                    <label for="{{ form.end_date.id_for_label }}" class="form-label fw-semibold">End Date</label>
+                    {{ form.end_date }}
+                </div>
+                <div class="col-md-3">
+                    <label for="{{ form.fast_window.id_for_label }}" class="form-label fw-semibold">{{ form.fast_window.label }}</label>
+                    {{ form.fast_window }}
+                    <div class="form-text">{{ form.fast_window.help_text }}</div>
+                </div>
+                <div class="col-md-3">
+                    <label for="{{ form.slow_window.id_for_label }}" class="form-label fw-semibold">{{ form.slow_window.label }}</label>
+                    {{ form.slow_window }}
+                    <div class="form-text">{{ form.slow_window.help_text }}</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="{{ form.rsi_period.id_for_label }}" class="form-label fw-semibold">{{ form.rsi_period.label }}</label>
+                    {{ form.rsi_period }}
+                </div>
+                <div class="col-md-4">
+                    <label for="{{ form.rsi_oversold.id_for_label }}" class="form-label fw-semibold">{{ form.rsi_oversold.label }}</label>
+                    {{ form.rsi_oversold }}
+                </div>
+                <div class="col-md-4">
+                    <label for="{{ form.rsi_overbought.id_for_label }}" class="form-label fw-semibold">{{ form.rsi_overbought.label }}</label>
+                    {{ form.rsi_overbought }}
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3" id="run-btn">
+                <span class="spinner-border spinner-border-sm d-none me-1" id="spinner"></span>
+                Run Backtest
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if results %}
+<!-- Performance comparison -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold">Strategy: {{ results.strategy_name }}</div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <tr><td class="px-3 text-muted">Final Value</td><td class="px-3 fw-semibold">{{ results.final_value }}</td></tr>
+                    <tr><td class="px-3 text-muted">Total Return</td><td class="px-3">{{ results.total_return }}</td></tr>
+                    <tr><td class="px-3 text-muted">Ann. Return</td><td class="px-3">{{ results.ann_return }}</td></tr>
+                    <tr><td class="px-3 text-muted">Ann. Volatility</td><td class="px-3">{{ results.ann_vol }}</td></tr>
+                    <tr><td class="px-3 text-muted">Sharpe Ratio</td><td class="px-3">{{ results.sharpe }}</td></tr>
+                    <tr><td class="px-3 text-muted">Max Drawdown</td><td class="px-3 text-danger">{{ results.max_drawdown }}</td></tr>
+                    <tr><td class="px-3 text-muted"># Trades</td><td class="px-3">{{ results.n_trades }}</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold">Benchmark: Buy & Hold</div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <tr><td class="px-3 text-muted">Final Value</td><td class="px-3 fw-semibold">{{ results.bh_final_value }}</td></tr>
+                    <tr><td class="px-3 text-muted">Total Return</td><td class="px-3">{{ results.bh_total_return }}</td></tr>
+                    <tr><td class="px-3 text-muted">Ann. Return</td><td class="px-3">{{ results.bh_ann_return }}</td></tr>
+                    <tr><td class="px-3 text-muted">Sharpe Ratio</td><td class="px-3">{{ results.bh_sharpe }}</td></tr>
+                    <tr><td class="px-3 text-muted">Max Drawdown</td><td class="px-3 text-danger">{{ results.bh_max_drawdown }}</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">{{ results.equity_chart|safe }}</div>
+</div>
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">{{ results.dd_chart|safe }}</div>
+</div>
+
+<div class="text-end mt-3">
+    <button class="btn btn-outline-success btn-sm" onclick="saveAnalysis('backtesting')">
+        <i class="bi bi-bookmark-plus me-1"></i>Save Analysis
+    </button>
+</div>
+{% endif %}
+{% endblock %}

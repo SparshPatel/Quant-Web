@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% block title %}Stock Screener — KappaQuant{% endblock %}
+
+{% block content %}
+<h2 class="mb-1">Stock Screener</h2>
+<p class="text-muted mb-4">Filter stocks by P/E, market cap, sector, and dividend yield.</p>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="post" id="analysis-form">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label for="{{ form.region.id_for_label }}" class="form-label fw-semibold">{{ form.region.label }}</label>
+                    {{ form.region }}
+                </div>
+                <div class="col-md-3">
+                    <label for="{{ form.sector.id_for_label }}" class="form-label fw-semibold">{{ form.sector.label }}</label>
+                    {{ form.sector }}
+                </div>
+                <div class="col-md-2">
+                    <label for="{{ form.pe_min.id_for_label }}" class="form-label fw-semibold">{{ form.pe_min.label }}</label>
+                    {{ form.pe_min }}
+                </div>
+                <div class="col-md-2">
+                    <label for="{{ form.pe_max.id_for_label }}" class="form-label fw-semibold">{{ form.pe_max.label }}</label>
+                    {{ form.pe_max }}
+                </div>
+                <div class="col-md-2">
+                    <label for="{{ form.mkt_cap_min.id_for_label }}" class="form-label fw-semibold">{{ form.mkt_cap_min.label }}</label>
+                    {{ form.mkt_cap_min }}
+                    <div class="form-text">{{ form.mkt_cap_min.help_text }}</div>
+                </div>
+                <div class="col-md-3">
+                    <label for="{{ form.div_yield_min.id_for_label }}" class="form-label fw-semibold">{{ form.div_yield_min.label }}</label>
+                    {{ form.div_yield_min }}
+                    <div class="form-text">{{ form.div_yield_min.help_text }}</div>
+                </div>
+                <div class="col-12">
+                    <label for="{{ form.custom_tickers.id_for_label }}" class="form-label fw-semibold">{{ form.custom_tickers.label }}</label>
+                    {{ form.custom_tickers }}
+                    <div class="form-text">{{ form.custom_tickers.help_text }}</div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3" id="run-btn">
+                <span class="spinner-border spinner-border-sm d-none me-1" id="spinner"></span>
+                Screen Stocks
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if results %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="text-muted mb-0">{{ results.n_results }} stocks found (screened {{ results.n_screened }})</h5>
+    <a href="{% url 'analytics:export_csv' %}?tool_name=stock_screener{% for k,v in request.POST.items %}{% if k != 'csrfmiddlewaretoken' %}&{{ k }}={{ v }}{% endif %}{% endfor %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-download me-1"></i>Export CSV
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0">
+                <thead><tr>
+                    <th class="px-3">Ticker</th><th class="px-3">Name</th><th class="px-3">Price</th>
+                    <th class="px-3">P/E</th><th class="px-3">Fwd P/E</th>
+                    <th class="px-3">Mkt Cap</th><th class="px-3">Div Yield</th>
+                    <th class="px-3">Sector</th><th class="px-3">Beta</th>
+                </tr></thead>
+                <tbody>
+                {% for s in results.stocks %}
+                <tr>
+                    <td class="px-3 fw-semibold">{{ s.ticker }}</td>
+                    <td class="px-3">{{ s.name }}</td>
+                    <td class="px-3">{{ s.price }}</td>
+                    <td class="px-3">{{ s.pe }}</td>
+                    <td class="px-3">{{ s.fwd_pe }}</td>
+                    <td class="px-3">{{ s.mkt_cap }}</td>
+                    <td class="px-3">{{ s.div_yield }}</td>
+                    <td class="px-3">{{ s.sector }}</td>
+                    <td class="px-3">{{ s.beta }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="text-end mt-3">
+    <button class="btn btn-outline-success btn-sm" onclick="saveAnalysis('stock_screener')">
+        <i class="bi bi-bookmark-plus me-1"></i>Save Analysis
+    </button>
+</div>
+{% endif %}
+{% endblock %}

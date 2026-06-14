@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}Earnings Calendar — KappaQuant{% endblock %}
+
+{% block content %}
+<h2 class="mb-1">Earnings Calendar</h2>
+<p class="text-muted mb-4">View upcoming earnings dates, EPS estimates, and recent earnings surprises for your holdings.</p>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="post" id="analysis-form">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-12">
+                    <label for="{{ form.tickers.id_for_label }}" class="form-label fw-semibold">{{ form.tickers.label }}</label>
+                    {{ form.tickers }}
+                    <div class="form-text">{{ form.tickers.help_text }}</div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3" id="run-btn">
+                <span class="spinner-border spinner-border-sm d-none me-1" id="spinner"></span>
+                Get Earnings
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if results %}
+{% if results.errors %}
+<div class="alert alert-warning">
+    <strong>Warnings:</strong> {{ results.errors|join:", " }}
+</div>
+{% endif %}
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold">Earnings Overview ({{ results.n_holdings }} holdings)</div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead><tr>
+                    <th class="px-3">Ticker</th><th class="px-3">Name</th><th class="px-3">Price</th>
+                    <th class="px-3">P/E</th><th class="px-3">EPS</th><th class="px-3">Fwd EPS</th>
+                    <th class="px-3">Next Earnings</th>
+                </tr></thead>
+                <tbody>
+                {% for h in results.holdings %}
+                <tr>
+                    <td class="px-3 fw-semibold">{{ h.ticker }}</td>
+                    <td class="px-3">{{ h.name }}</td>
+                    <td class="px-3">{{ h.price }}</td>
+                    <td class="px-3">{{ h.pe }}</td>
+                    <td class="px-3">{{ h.eps }}</td>
+                    <td class="px-3">{{ h.fwd_eps }}</td>
+                    <td class="px-3">
+                        {% if h.earnings_date != 'N/A' %}
+                        <span class="badge bg-info">{{ h.earnings_date }}</span>
+                        {% else %}N/A{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% for h in results.holdings %}
+{% if h.quarters %}
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-white fw-semibold">{{ h.ticker }} — Recent Quarters</div>
+    <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+            <thead><tr><th class="px-3">Quarter</th><th class="px-3">EPS Est.</th><th class="px-3">EPS Actual</th><th class="px-3">Surprise</th></tr></thead>
+            <tbody>
+            {% for q in h.quarters %}
+            <tr>
+                <td class="px-3">{{ q.quarter }}</td>
+                <td class="px-3">{{ q.eps_est }}</td>
+                <td class="px-3">{{ q.eps_actual }}</td>
+                <td class="px-3">{{ q.surprise }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+<div class="text-end mt-3">
+    <button class="btn btn-outline-success btn-sm" onclick="saveAnalysis('earnings_calendar')">
+        <i class="bi bi-bookmark-plus me-1"></i>Save Analysis
+    </button>
+</div>
+{% endif %}
+{% endblock %}

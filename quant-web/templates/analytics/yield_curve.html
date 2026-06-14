@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}Yield Curve — KappaQuant{% endblock %}
+
+{% block content %}
+<h2 class="mb-1">Yield Curve Analysis</h2>
+<p class="text-muted mb-4">US Treasury yield curve, spread analysis, and inversion detection.</p>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="post" id="analysis-form">
+            {% csrf_token %}
+            <p class="text-muted mb-2">Click below to fetch the latest US Treasury yield curve data.</p>
+            <button type="submit" class="btn btn-primary" id="run-btn">
+                <span class="spinner-border spinner-border-sm d-none me-1" id="spinner"></span>
+                Fetch Yield Curve
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if results %}
+{% if results.inversion_detected %}
+<div class="alert alert-danger mb-4">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    <strong>Yield Curve Inversion Detected!</strong> Short-term rates exceed long-term rates — historically a recession indicator.
+</div>
+{% endif %}
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold">Current Treasury Yields</div>
+    <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+            <thead><tr><th class="px-3">Maturity</th><th class="px-3">Yield</th><th class="px-3">1M Change</th><th class="px-3">1Y Change</th></tr></thead>
+            <tbody>
+            {% for cp in results.curve_points %}
+            <tr>
+                <td class="px-3 fw-semibold">{{ cp.label }}</td>
+                <td class="px-3">{{ cp.yield_pct }}</td>
+                <td class="px-3">{{ cp.change_1m }}</td>
+                <td class="px-3">{{ cp.change_1y }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    {% for key, val in results.spreads.items %}
+    {% if '_inverted' not in key %}
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">{{ key }} Spread</small>
+            <h4 class="mb-0">{{ val }}</h4>
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">{{ results.curve_chart|safe }}</div>
+</div>
+
+{% if results.spread_chart %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">{{ results.spread_chart|safe }}</div>
+</div>
+{% endif %}
+
+<div class="text-end mt-3">
+    <button class="btn btn-outline-success btn-sm" onclick="saveAnalysis('yield_curve')">
+        <i class="bi bi-bookmark-plus me-1"></i>Save Analysis
+    </button>
+</div>
+{% endif %}
+{% endblock %}

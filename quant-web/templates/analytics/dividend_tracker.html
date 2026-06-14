@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% block title %}Dividend Tracker — KappaQuant{% endblock %}
+
+{% block content %}
+<h2 class="mb-1">Dividend Tracker</h2>
+<p class="text-muted mb-4">Yield analysis, dividend growth rates, ex-div dates, and income projections.</p>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="post" id="analysis-form">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-12">
+                    <label for="{{ form.tickers.id_for_label }}" class="form-label fw-semibold">{{ form.tickers.label }}</label>
+                    {{ form.tickers }}
+                    <div class="form-text">{{ form.tickers.help_text }}</div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3" id="run-btn">
+                <span class="spinner-border spinner-border-sm d-none me-1" id="spinner"></span>
+                Analyze Dividends
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if results %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold">Dividend Summary</div>
+    <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+            <thead><tr><th class="px-3">Ticker</th><th class="px-3">Name</th><th class="px-3">Price</th><th class="px-3">Yield</th><th class="px-3">Annual Div</th><th class="px-3">Payout Ratio</th><th class="px-3">5Y Growth</th><th class="px-3">Ex-Date</th></tr></thead>
+            <tbody>
+            {% for h in results.holdings %}
+            <tr>
+                <td class="px-3 fw-semibold">{{ h.ticker }}</td>
+                <td class="px-3">{{ h.name }}</td>
+                <td class="px-3">{{ h.price }}</td>
+                <td class="px-3">{{ h.div_yield }}</td>
+                <td class="px-3">{{ h.annual_div }}</td>
+                <td class="px-3">{{ h.payout_ratio }}</td>
+                <td class="px-3">{{ h.growth_rate }}</td>
+                <td class="px-3">{{ h.ex_date }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if results.yield_chart %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">{{ results.yield_chart|safe }}</div>
+</div>
+{% endif %}
+
+{% if results.history_chart %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">{{ results.history_chart|safe }}</div>
+</div>
+{% endif %}
+
+{% if results.projection_rows %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold">5-Year Dividend Projection (per share)</div>
+    <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+            <thead><tr><th class="px-3">Ticker</th><th class="px-3">Year 1</th><th class="px-3">Year 2</th><th class="px-3">Year 3</th><th class="px-3">Year 4</th><th class="px-3">Year 5</th></tr></thead>
+            <tbody>
+            {% for row in results.projection_rows %}
+            <tr>
+                <td class="px-3 fw-semibold">{{ row.ticker }}</td>
+                {% for yr in row.years %}
+                <td class="px-3">{{ yr }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<div class="text-end mt-3">
+    <button class="btn btn-outline-success btn-sm" onclick="saveAnalysis('dividend_tracker')">
+        <i class="bi bi-bookmark-plus me-1"></i>Save Analysis
+    </button>
+</div>
+{% endif %}
+{% endblock %}

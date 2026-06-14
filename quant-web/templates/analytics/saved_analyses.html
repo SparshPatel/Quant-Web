@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Saved Analyses — KappaQuant{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Saved Analyses</h2>
+
+{% if analyses %}
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0">
+                <thead><tr>
+                    <th class="px-3">Tool</th>
+                    <th class="px-3">Parameters</th>
+                    <th class="px-3">Saved</th>
+                    <th class="px-3">Actions</th>
+                </tr></thead>
+                <tbody>
+                {% for a in analyses %}
+                <tr>
+                    <td class="px-3 fw-semibold">{{ a.tool_label }}</td>
+                    <td class="px-3">
+                        {% for key, val in a.parameters.items %}
+                        <span class="badge bg-light text-dark me-1">{{ key }}: {{ val }}</span>
+                        {% endfor %}
+                    </td>
+                    <td class="px-3 text-nowrap">{{ a.created_at|date:"M d, Y H:i" }}</td>
+                    <td class="px-3">
+                        <a href="{% url 'analytics:rerun_saved' a.pk %}" class="btn btn-outline-primary btn-sm me-1">
+                            <i class="bi bi-arrow-repeat"></i> Re-run
+                        </a>
+                        <form method="post" action="{% url 'analytics:delete_saved' a.pk %}" class="d-inline"
+                              onsubmit="return confirm('Delete this saved analysis?')">
+                            {% csrf_token %}
+                            <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="text-center text-muted py-5">
+    <i class="bi bi-bookmark fs-1 mb-3 d-block"></i>
+    <p>No saved analyses yet. Run any tool and click <strong>Save Analysis</strong> to bookmark it here.</p>
+</div>
+{% endif %}
+{% endblock %}

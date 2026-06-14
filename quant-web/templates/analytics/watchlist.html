@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}Watchlist — KappaQuant{% endblock %}
+
+{% block content %}
+<h2 class="mb-1">Watchlist</h2>
+<p class="text-muted mb-4">Track prices, technical signals, and key stats for your personal watchlist.</p>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="post" id="analysis-form">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-12">
+                    <label for="{{ form.tickers.id_for_label }}" class="form-label fw-semibold">{{ form.tickers.label }}</label>
+                    {{ form.tickers }}
+                    <div class="form-text">{{ form.tickers.help_text }}</div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3" id="run-btn">
+                <span class="spinner-border spinner-border-sm d-none me-1" id="spinner"></span>
+                Refresh Watchlist
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if results %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold">Watchlist Overview</div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+        <table class="table table-sm mb-0">
+            <thead><tr><th class="px-3">Ticker</th><th class="px-3">Name</th><th class="px-3">Price</th><th class="px-3">1D Change</th><th class="px-3">1W Change</th><th class="px-3">SMA Signal</th><th class="px-3">RSI</th><th class="px-3">RSI Signal</th><th class="px-3">Volume</th><th class="px-3">Mkt Cap</th></tr></thead>
+            <tbody>
+            {% for w in results.watchlist %}
+            <tr>
+                <td class="px-3 fw-semibold">{{ w.ticker }}</td>
+                <td class="px-3">{{ w.name }}</td>
+                <td class="px-3">{{ w.price }}</td>
+                <td class="px-3 {% if '-' in w.change_1d %}text-danger{% else %}text-success{% endif %}">{{ w.change_1d }}</td>
+                <td class="px-3 {% if '-' in w.change_1w %}text-danger{% else %}text-success{% endif %}">{{ w.change_1w }}</td>
+                <td class="px-3">
+                    {% if w.sma_signal == 'BULLISH' %}<span class="badge bg-success">BULLISH</span>
+                    {% elif w.sma_signal == 'BEARISH' %}<span class="badge bg-danger">BEARISH</span>
+                    {% else %}<span class="badge bg-secondary">N/A</span>{% endif %}
+                </td>
+                <td class="px-3">{{ w.rsi }}</td>
+                <td class="px-3">
+                    {% if w.rsi_signal == 'OVERSOLD' %}<span class="badge bg-success">OVERSOLD</span>
+                    {% elif w.rsi_signal == 'OVERBOUGHT' %}<span class="badge bg-danger">OVERBOUGHT</span>
+                    {% else %}<span class="badge bg-secondary">NEUTRAL</span>{% endif %}
+                </td>
+                <td class="px-3">{{ w.volume }}</td>
+                <td class="px-3">{{ w.mkt_cap }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+</div>
+
+{% if results.change_chart %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">{{ results.change_chart|safe }}</div>
+</div>
+{% endif %}
+
+<div class="text-end mt-3">
+    <button class="btn btn-outline-success btn-sm" onclick="saveAnalysis('watchlist')">
+        <i class="bi bi-bookmark-plus me-1"></i>Save Analysis
+    </button>
+</div>
+{% endif %}
+{% endblock %}

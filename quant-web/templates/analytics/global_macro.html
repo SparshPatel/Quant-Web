@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block title %}Global Macro Dashboard — KappaQuant{% endblock %}
+
+{% block content %}
+<h2 class="mb-1"><i class="bi bi-globe2 me-2"></i>Global Macro Dashboard</h2>
+<p class="text-muted mb-4">Compare indices from around the world — normalised performance, correlation, and risk metrics.</p>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="post" id="analysis-form">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <label for="{{ form.indices.id_for_label }}" class="form-label fw-semibold">{{ form.indices.label }}</label>
+                    {{ form.indices }}
+                    <div class="form-text">{{ form.indices.help_text }}</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="{{ form.start_date.id_for_label }}" class="form-label fw-semibold">Start Date</label>
+                    {{ form.start_date }}
+                    <div class="mt-3">
+                        <label for="{{ form.end_date.id_for_label }}" class="form-label fw-semibold">End Date</label>
+                        {{ form.end_date }}
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3" id="run-btn">
+                <span class="spinner-border spinner-border-sm d-none me-1" id="spinner"></span>
+                Compare Indices
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if results %}
+<!-- Summary KPI -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Indices Compared</small>
+            <h4 class="mb-0">{{ results.n_indices }}</h4>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Date Range</small>
+            <h6 class="mb-0">{{ results.date_range }}</h6>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Trading Days</small>
+            <h4 class="mb-0">{{ results.n_days }}</h4>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Chart -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">{{ results.performance_chart|safe }}</div>
+</div>
+
+<!-- Statistics Table -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold">Performance & Risk Summary</div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th class="px-3">Index</th>
+                        <th class="px-3">Currency</th>
+                        <th class="px-3">Region</th>
+                        <th class="px-3">Ann. Return</th>
+                        <th class="px-3">Ann. Vol</th>
+                        <th class="px-3">Sharpe</th>
+                        <th class="px-3">Cum. Return</th>
+                        <th class="px-3">Max Drawdown</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for s in results.summary %}
+                <tr>
+                    <td class="px-3 fw-semibold">{{ s.name }}</td>
+                    <td class="px-3">{{ s.currency }}</td>
+                    <td class="px-3"><small class="text-muted">{{ s.region }}</small></td>
+                    <td class="px-3">{{ s.ann_return }}</td>
+                    <td class="px-3">{{ s.ann_vol }}</td>
+                    <td class="px-3">{{ s.sharpe }}</td>
+                    <td class="px-3">{{ s.cum_return }}</td>
+                    <td class="px-3 text-danger">{{ s.max_drawdown }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Correlation Heatmap -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">{{ results.correlation_chart|safe }}</div>
+</div>
+
+<!-- Rolling Correlation -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">{{ results.rolling_corr_chart|safe }}</div>
+</div>
+
+<div class="text-end mt-3">
+    <button class="btn btn-outline-success btn-sm" onclick="saveAnalysis('global_macro')">
+        <i class="bi bi-bookmark-plus me-1"></i>Save Analysis
+    </button>
+</div>
+{% endif %}
+{% endblock %}
