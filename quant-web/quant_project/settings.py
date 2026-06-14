@@ -67,23 +67,27 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'quant_project.wsgi.application'
 
-db_engine = os.getenv('DB_ENGINE', 'sqlite3')
-if db_engine == 'sqlite3':
+DATABASE_URL = os.getenv('DATABASE_URL')
+if DATABASE_URL:
+    # Production: use PostgreSQL via DATABASE_URL (e.g. Render managed DB)
+    import urllib.parse
+    parsed = urllib.parse.urlparse(DATABASE_URL)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': parsed.path[1:],
+            'USER': parsed.username or '',
+            'PASSWORD': parsed.password or '',
+            'HOST': parsed.hostname or 'localhost',
+            'PORT': parsed.port or 5432,
+        }
+    }
+else:
+    # Default: SQLite (no external DB required)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.getenv('DB_NAME', 'quant_web'),
-            'USER': os.getenv('DB_USER', 'postgres'),
-            'PASSWORD': os.getenv('DB_PASSWORD', ''),
-            'HOST': os.getenv('DB_HOST', 'localhost'),
-            'PORT': os.getenv('DB_PORT', '5432'),
         }
     }
 
